@@ -1,3 +1,9 @@
 [submodule "probelm_sets/1/PS1"]
 	path = probelm_sets/1/PS1
 	url = https://github.com/geometric3d/PS1.git
+[submodule "assignments/1/assignment1"]
+	path = assignments/1/assignment1
+	url = https://github.com/geometric3d/assignment1.git
+[submodule "probelm_sets/2/PS2"]
+	path = probelm_sets/2/PS2
+	url = https://github.com/geometric3d/PS2.git
