@@ -1,0 +1,769 @@
+\documentclass[11pt,addpoints,answers]{exam}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amsfonts}
+\usepackage{enumerate}
+\usepackage{graphicx}
+\usepackage{titling}
+\usepackage{url}
+\usepackage{xfrac}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{paralist}
+\usepackage{epstopdf}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
+\usepackage{fancyvrb}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{float}
+\usepackage{paralist}
+\usepackage[svgname]{xcolor}
+\usepackage{enumerate}
+\usepackage{array}
+\usepackage{times}
+\usepackage{url}
+\usepackage{comment}
+\usepackage{environ}
+\usepackage{times}
+\usepackage{textcomp}
+\usepackage{caption}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
+\usepackage{listings}
+\usepackage{parskip} % For NIPS style paragraphs.
+\usepackage[compact]{titlesec} % Less whitespace around titles
+\usepackage[inline]{enumitem} % For inline enumerate* and itemize*
+\usepackage{datetime}
+\usepackage{comment}
+% \usepackage{minted}
+\usepackage{lastpage}
+\usepackage{color}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{shapes,decorations,bayesnet}
+%\usepackage{framed}
+\usepackage{booktabs}
+\usepackage{cprotect}
+\usepackage{xcolor}
+\usepackage{verbatimbox}
+\usepackage[many]{tcolorbox}
+\usepackage{cancel}
+\usepackage{wasysym}
+\usepackage{mdframed}
+\usepackage{subcaption}
+\usetikzlibrary{shapes.geometric}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Formatting for \CorrectChoice of "exam" %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\CorrectChoiceEmphasis{}
+\checkedchar{\blackcircle}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Better numbering                        %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\numberwithin{equation}{section} % Number equations within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+\numberwithin{figure}{section} % Number figures within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+\numberwithin{table}{section} % Number tables within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Common Math Commands                    %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{mathabbreviations.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Code highlighting with listings         %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\definecolor{bluekeywords}{rgb}{0.13,0.13,1}
+\definecolor{greencomments}{rgb}{0,0.5,0}
+\definecolor{redstrings}{rgb}{0.9,0,0}
+\definecolor{light-gray}{gray}{0.95}
+
+\newcommand{\MYhref}[3][blue]{\href{#2}{\color{#1}{#3}}}%
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstdefinelanguage{Shell}{
+  keywords={tar, cd, make},
+  %keywordstyle=\color{bluekeywords}\bfseries,
+  alsoletter={+},
+  ndkeywords={python, py, javac, java, gcc, c, g++, cpp, .txt, octave, m, .tar},
+  %ndkeywordstyle=\color{bluekeywords}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{purple}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  morestring=[b]',
+  morestring=[b]",
+  backgroundcolor = \color{light-gray}
+}
+
+\lstset{columns=fixed, basicstyle=\ttfamily,
+    backgroundcolor=\color{light-gray},xleftmargin=0.5cm,frame=tlbr,framesep=4pt,framerule=0pt}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Custom box for highlights               %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Define box and box title style
+\tikzstyle{mybox} = [fill=blue!10, very thick,
+    rectangle, rounded corners, inner sep=1em, inner ysep=1em]
+
+% \newcommand{\notebox}[1]{
+% \begin{tikzpicture}
+% \node [mybox] (box){%
+%     \begin{minipage}{\textwidth}
+%     #1
+%     \end{minipage}
+% };
+% \end{tikzpicture}%
+% }
+
+\NewEnviron{notebox}{
+\begin{tikzpicture}
+\node [mybox] (box){
+    \begin{minipage}{\textwidth}
+        \BODY
+    \end{minipage}
+};
+\end{tikzpicture}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Commands showing / hiding solutions     %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% To HIDE SOLUTIONS (to post at the website for students), set this value to 0: \def\issoln{0}
+\def\issoln{0}
+% Some commands to allow solutions to be embedded in the assignment file.
+\ifcsname issoln\endcsname \else \def\issoln{0} \fi
+% Default to an empty solutions environ.
+\NewEnviron{soln}{}{}
+% Default to an empty qauthor environ.
+\NewEnviron{qauthor}{}{}
+% Default to visible (but empty) solution box.
+\newtcolorbox[]{studentsolution}[1][]{%
+    breakable,
+    enhanced,
+    colback=white,
+    title=Solution,
+    #1
+}
+
+\if\issoln 1
+% Otherwise, include solutions as below.
+\RenewEnviron{soln}{
+    \leavevmode\color{red}\ignorespaces
+    \textbf{Solution} \BODY
+}{}
+\fi
+
+\if\issoln 1
+% Otherwise, include solutions as below.
+\RenewEnviron{solution}{}
+\fi
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Commands for customizing the assignment %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\courseNum}{\href{https://geometric3d.github.io}{16822}}
+\newcommand{\courseName}{\href{https://geometric3d.github.io}{Geometry-based Methods in Vision}}
+\newcommand{\courseSem}{\href{https://geometric3d.github.io}{Fall 2022}}
+\newcommand{\courseUrl}{\url{https://piazza.com/cmu/fall2022/16822}}
+\newcommand{\hwNum}{Problem Set 1}
+\newcommand{\hwTopic}{Linear Algebra }
+\newcommand{\hwName}{\hwNum: \hwTopic}
+\newcommand{\outDate}{Sep. 06, 2022}
+\newcommand{\dueDate}{Sep. 13, 2022 11:59 PM}
+\newcommand{\instructorName}{Shubham Tulsiani}
+\newcommand{\taNames}{Mosam Dabhi, Kangle Deng, Jenny Nan}
+
+%\pagestyle{fancyplain}
+\lhead{\hwName}
+\rhead{\courseNum}
+\cfoot{\thepage{} of \numpages{}}
+
+\title{\textsc{\hwName}} % Title
+
+
+\author{}
+
+\date{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Useful commands for typesetting the questions %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand \expect {\mathbb{E}}
+\newcommand \mle [1]{{\hat #1}^{\rm MLE}}
+\newcommand \map [1]{{\hat #1}^{\rm MAP}}
+\newcommand \argmax {\operatorname*{argmax}}
+\newcommand \argmin {\operatorname*{argmin}}
+\newcommand \code [1]{{\tt #1}}
+\newcommand \datacount [1]{\#\{#1\}}
+\newcommand \ind [1]{\mathbb{I}\{#1\}}
+
+\newcommand{\blackcircle}{\tikz\draw[black,fill=black] (0,0) circle (1ex);}
+\renewcommand{\circle}{\tikz\draw[black] (0,0) circle (1ex);}
+
+\newcommand{\pts}[1]{\textbf{[#1 pts]}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Document configuration %
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Don't display a date in the title and remove the white space
+\predate{}
+\postdate{}
+\date{}
+
+%%%%%%%%%%%%%%%%%%
+% Begin Document %
+%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+
+\section*{}
+\begin{center}
+  \textsc{\LARGE \hwNum} \\
+%   \textsc{\LARGE \hwTopic\footnote{Compiled on \today{} at \currenttime{}}} \\
+  \vspace{1em}
+  \textsc{\large \courseNum{} \courseName{} (\courseSem)} \\
+  %\vspace{0.25em}
+  \courseUrl\\
+  \vspace{1em}
+  OUT: \outDate \\
+  DUE: \dueDate \\
+  Instructor: \instructorName \\
+  TAs: \taNames
+\end{center}
+
+\section*{START HERE: Instructions}
+\begin{itemize}
+\item \textbf{Collaboration policy:} All are encouraged to work together BUT you must do your own work (code and write up). If you work with someone, please include their name in your write up and cite any code that has been discussed. If we find highly identical write-ups or code without proper accreditation of collaborators, we will take action according to university policies, i.e. you will likely fail the course. See the \href{https://www.dropbox.com/s/z6o0tinc9eaez46/L01_Overview.pdf?dl=0}{Academic Integrity Section} detailed in the initial lecture for more information.
+
+\item\textbf{Late Submission Policy:} There are \textbf{no} late days for Problem Set submissions.
+
+\item\textbf{Submitting your work:}
+
+\begin{itemize}
+
+\item We will be using Gradescope (\url{https://gradescope.com/}) to submit the Problem Sets. Please use the provided template. Submissions can be written in LaTeX. Regrade requests can be made, however this gives the TA the opportunity to regrade your entire paper, meaning if additional mistakes are found then points will be deducted.
+Each derivation/proof should be  completed on a separate page. For short answer questions you \textbf{should} include your work in your solution.  
+\end{itemize}
+
+\item \textbf{Materials:} The data that you will need in order to complete this assignment is posted along with the writeup and template on Piazza.
+
+\end{itemize}
+
+For multiple choice or select all that apply questions, replace \lstinline{\choice} with \lstinline{\CorrectChoice} to obtain a shaded box/circle, and don't change anything else.
+
+\clearpage
+
+\section*{Instructions for Specific Problem Types}
+
+For ``Select One" questions, please fill in the appropriate bubble completely:
+
+\begin{quote}
+\textbf{Select One:} Who taught this course?
+     \begin{checkboxes}
+     \CorrectChoice Shubham Tulsiani
+     \choice Deepak Pathak
+     \choice Fernando De la Torre
+     \choice Deva Ramanan
+    \end{checkboxes}
+\end{quote}
+
+For ``Select all that apply" questions, please fill in all appropriate squares completely:
+
+\begin{quote}
+\textbf{Select all that apply:} Which are scientists?
+{
+    \checkboxchar{$\Box$} \checkedchar{$\blacksquare$}
+    \begin{checkboxes}
+     \CorrectChoice Stephen Hawking
+     \CorrectChoice Albert Einstein
+     \CorrectChoice Isaac Newton
+     \choice None of the above
+    \end{checkboxes}
+    }
+\end{quote}
+
+For questions where you must fill in a blank, please make sure your final answer is fully included in the given space. You may cross out answers or parts of answers, but the final answer must still be within the given space.
+
+\begin{quote}
+\textbf{Fill in the blank:} What is the course number?
+
+\begin{tcolorbox}[fit,height=1cm, width=4cm, blank, borderline={1pt}{-2pt},nobeforeafter, halign=center, valign=center]
+    \begin{center}\huge16-822\end{center}
+    \end{tcolorbox}\hspace{2cm}
+\end{quote}
+
+\clearpage
+
+\section{Vector Spaces  [8pts]}
+\begin{questions}
+
+\question \textbf{[2 pts]} Which of the following subsets of $\mathbb{R}^3$ are vector spaces?
+    \textbf{Select all that are true:} \textbf{[2 pts]}
+    \checkboxchar{$\Box$} \checkedchar{$\blacksquare$}
+    \begin{checkboxes}
+        \CorrectChoice The plane formed by the vector $(v_1, v_2, v_3) $ such that $v_1 = v_2$
+        \choice The plane formed by the vector $(v_1, v_2, v_3) $ such that $v_1 = 1$
+        \CorrectChoice The plane formed by the vector $(v_1, v_2, v_3) $  such that $v_1 v_2 v_3 = 0$
+        \CorrectChoice All linear combinations of $\vv = (1, 4, 0)$ and $\wv = (2, 2, 2)$
+    \end{checkboxes}
+
+\question \textbf{[2 pts]} For the following questions, consider a matrix $\Av \in \mathbb{R}^{m \times n}$ and a vector $b \in \mathbb{R}^m$. Answer True or false (with a counterexample if false):
+    \textbf{Select all that are true:} 
+    \begin{checkboxes}
+        \choice The vectors b that are not in the column space $\Cv(\Av)$ form a subspace.
+        \CorrectChoice If $\Cv(\Av)$ contains only zero vectors, then $\Av$ is the zero matrix.
+        \CorrectChoice The column space of the matrix $2\Av$ equals the column space of $\Av$
+        \choice The column space of the matrix $\Av - \Iv$ equals the column space of $\Av$
+    \end{checkboxes}
+
+\question \textbf{[2 pts]} Create a $3 \times 4$ matrix whose solution to $\Av \xv = 0$ is the $\sv_1=\begin{bmatrix}
+         -3 \\
+         1 \\
+         0 \\
+         0
+        \end{bmatrix}$ and $\sv_2=\begin{bmatrix}
+         -2 \\
+         0 \\
+         -6 \\
+         0
+        \end{bmatrix}$
+
+    \begin{tcolorbox}[fit,height=5cm, width=\textwidth, blank, borderline={0.5pt}{-2pt},halign=center, valign=center, nobeforeafter]
+        %
+    \end{tcolorbox}
+
+
+\question \textbf{[2 pts]} If a $3{\times}4$ matrix has rank $3$, what are its column space and left nullspace?
+
+    \begin{tcolorbox}[fit,height=3cm, width=\textwidth, blank, borderline={0.5pt}{-2pt},halign=center, valign=center, nobeforeafter]
+    \end{tcolorbox}
+
+
+\end{questions}
+\clearpage
+\section{Eigenvalues, Eigenvector, Singular Value Decomposition [16 pts]}
+\begin{questions}
+    \question \textbf{[2 pts]}  Deduce the Eigenvalue and Eigenvectors of $\Av$:
+    \begin{align*}
+        \begin{bmatrix}
+            1 & 2 \\ 2 & 4
+        \end{bmatrix}
+    \end{align*}
+    \begin{tcolorbox}[fit,height=8cm, width=\textwidth, blank, borderline={0.5pt}{-2pt},halign=center, valign=center, nobeforeafter]
+    For calculating eigen values, \begin{vmatrix} A -\lambda I\end{vmatrix} = 0\\
+    \Rightarrow \begin{vmatrix}
+    \begin{bmatrix} 1&2 \\ 2&4 \end{bmatrix} - \lambda\begin{bmatrix}1&0\\0&1  \end{bmatrix}
+    \end{vmatrix} =0 \\
+    
+    \begin{vmatrix}
+        1-\lambda & 2 \\ 2 &4-\lambda
+    \end{vmatrix}=0\\
+    
+    
+    \text{$(1-\lambda)(4-\lambda) -4 =0 \hspace{0.2cm} \Rightarrow
+    \lambda^2 -5\lambda = 0$}\\
+    \Rightarrow \textcolor{red}{\lambda_1 = 0 ; \lambda_2 = 5}\\
+    
+    \text{For any eigen value} \lambda\text{, the corresponding eigen vector,}\hspace{0.1cm} v, \hspace{0.1cm}\text{can be calculated as $\hspace{0.1cm} Av = \lambda v$}\\
+    
+    \Rightarrow \text{For\hspace{0.1cm} $\lambda_1 = 0,  Av_1 = \lambda_1 v_1 \Rightarrow\begin{bmatrix} 1&2\\2&4 \end{bmatrix}\begin{bmatrix} v_{11}\\v_{12}\end{bmatrix} = \begin{bmatrix} 0\\0\end{bmatrix} \Rightarrow v_{11} + 2v_{12} = 0 \Rightarrow v_{11}=-2v_{12}$}\\
+    
+    \Rightarrow \textcolor{red}{\text{The first eigen vector, }v_1 =\begin{bmatrix} -2\\1 \end{bmatrix}}
+    
+    \text{For$\hspace{0.1cm} \lambda_2 = 5,  Av_2 = \lambda_2 v_2 \Rightarrow\begin{bmatrix} 1&2\\2&4 \end{bmatrix}\begin{bmatrix} v_{21}\\v_{22}\end{bmatrix} = 5\begin{bmatrix} v_{21}\\v_{22}\end{bmatrix}$}\\
+    
+    \Rightarrow \text{$\begin{bmatrix} v_{21}+2v_{22} \\ 2v_{21}+4v_{22} \end{bmatrix} = 5\begin{bmatrix}v_{21} \\ 5v_{22} \end{bmatrix}$}\\
+    
+    \text{This gives us 2 equations: $v_{21} + 2v_{22} = 5v_21 \hspace{0.2cm};\hspace{0.2cm}2v_{21}+ 4v_{22} = 5v_{22}$}\\
+    
+    \text{Solving these two equations, we get: $ v_{22}=2v_{21}$}\\
+    \Rightarrow \textcolor{red}{\text{The second eigen vector, }v_2 = \begin{bmatrix} 1\\2 \end{bmatrix}}
+    
+    
+    \end{tcolorbox}
+
+    \question \textbf{[2 pts]}   For
+    \begin{align*}
+         \Av = \begin{bmatrix}
+             2 & -1 \\ -1 & 2
+         \end{bmatrix}
+     \end{align*}
+     Find the Eigenvalues and Eigenvectors of $\Av, \Av^2$ and $\Av^{-1}$ and $\Av + 4\Iv$
+
+    \begin{tcolorbox}[fit,height=8cm, width=\textwidth, blank, borderline={0.5pt}{-2pt},halign=center, valign=center, nobeforeafter]
+    
+    \newcommand\Amatqtt{\begin{bmatrix} 2& -1\\-1&2 \end{bmatrix}}
+    
+    \text{In this case, we can see that $A$ is a symmetric matrix.}\\
+    \begin{flushleft}\textbf{Eigen Values for }A: \end{flushleft}\\
+    \text{$\det(A-\lambda I)=0$} \\
+    \Rightarrow \begin{vmatrix} \begin{bmatrix} 2& -1\\-1&2 \end{bmatrix} - \lambda\begin{bmatrix} 1&0\\0&1 \end{bmatrix} \end{vmatrix} =0 \\
+    \begin{vmatrix} 2-\lambda & -1 \\ -1& 2-\lambda \end{vmatrix} =0\\
+    \text{$\Rightarrow (\lambda -2)^2 -1 =0 \Rightarrow\lambda -2 =\hspace{0.1cm} \pm 1 \hspace{0.1cm}
+    $}\Rightarrow \textcolor{red}{\lambda_1 = 3 ; \lambda_2 = 1}\\
+    
+    \begin{flushleft}\textbf{Calculating eigen vectors:}\end{flushleft}\\
+    %lambda1
+    \begin{flushleft}\underline{For $\lambda_1$}:\end{flushleft}\\
+    \text{$Av_1 = \lambda_1v_1 \Rightarrow \Amatqtt \begin{bmatrix} v_{11} \\ v_{12}\end{bmatrix} = 3\begin{bmatrix} v_{11} \\ v_{12}\end{bmatrix} \Rightarrow \begin{bmatrix} 2v_{11} -v_{12} \\ -v_{11}+2v_{12} \end{bmatrix} = \begin{bmatrix} 3v_{11} \\ 3v_{12}\end{bmatrix} $} \\
+    \textcolor{red}{\text{Solving the two equations, we get the first eigen vector as $v_1 = \begin{bmatrix} 1\\-1 \end{bmatrix}    $}}
+    
+    %lambda2
+    \begin{flushleft} \underline{For $\lambda_2:$} \end{flushleft}\\
+    \text{$Av_2 = \lambda_2 v_2 \Rightarrow \Amatqtt \begin{bmatrix} v_{21} \\ v_{22} \end{bmatrix} = \lambda_2 \begin{bmatrix} v_{21} \\ v_{22} \end{bmatrix} \Rightarrow \begin{bmatrix} 2v_{21} - v_{22} \\ -v_{21} + 2v_{22} \end{bmatrix} = \begin{bmatrix} v_{21} \\ v_{22} \end{bmatrix}$}\\
+    
+    \textcolor{red}{\text{Solving the two equations, we get the second eigen vector as $v_2 = \begin{bmatrix}1\\1 \end{bmatrix}$}}
+    
+    \begin{flushleft} \textbf{Continued on next page } \end{flushleft}
+    
+    \end{tcolorbox}
+    
+    \begin{tcolorbox}[fit,height=5cm, width=\textwidth, blank, borderline={0.5pt}{-2pt},halign=center, valign=center, nobeforeafter]
+    
+    %A^2
+    \begin{flushleft} \underline{\textbf{Case $A^2$}}: \end{flushleft}
+    \text{\textbf{Statement 1: }As $A$ is a square matrix, the eigen values for any $A^n = \lambda^n$, where $\lambda$ is the eigen value of $A$}\\
+    
+    \Rightarrow\text{In our case, eigen values for $A^2, \hspace{0.2cm} \lambda_1' \text{ and } \lambda_2'$ are:  $\lambda_1' = \lambda_1^2 ,\hspace{0.1cm} \lambda_2' = \lambda_2^2$}\\
+    \textcolor{red}{\text{$\lambda_1' = 9, \hspace{0.1cm} \lambda_2' =1$,   eigen vectors stay the same}}\\
+    
+    %A^-1
+    \begin{flushleft} \underline{\textbf{Case $A^{-1}$}}:    \end{flushleft}\\
+    \text{From statement 1, given in the last case, the eigen values for $A^{-1}$ are: $\lambda_1' = \lambda_1^{-1}, \hspace{0.1cm} \lambda_2' = \lambda_2^{-1}$}\\
+    \textcolor{red}{\text{$\lambda_1' = \frac{1}{3}, \hspace{0.1cm} \lambda_2' = 1$,   eigen vectors stay the same}}
+    
+    %A+4I
+    \begin{flushleft}\underline{\textbf{Case $A+4I$}}:  \end{flushleft}\\
+    \text{In this case, as we are only translating the matrix along its axes, this will translate the eigen values by the}\\\text{ same amount, whereas the eigen vectors will still stay the same }\\
+    \text{So, as we are translating the original matrix by $4$ units, the new eigen values will also be translated by $4$ units}\\
+    \text{\Rightarrow$\lambda_1' = \lambda_1 + 4, \hspace{0.1cm} \lambda_2' = \lambda_2 +4$  \Rightarrow} \text{\textcolor{red}{$\lambda_1' = 7, \hspace{0.1cm} \lambda_2' = 5$}}
+    
+    
+    \end{tcolorbox}
+
+    \question \textbf{[2 pts]}  $\Av \in \mathbb{R}^{m \times n}$ is positive definite if for any \textbf{non-zero} vector $\xv \in \mathbb{R}^{n}$  we have $\xv^\top \Av \xv > 0$:
+    \begin{align*}
+        \xv^\top \Av \xv = \begin{bmatrix}
+            x & y
+        \end{bmatrix} \begin{bmatrix}
+            a & b \\ b & c
+        \end{bmatrix}
+        \begin{bmatrix}
+            x \\ y
+        \end{bmatrix}
+    \end{align*}
+
+    Test matrices $\Cv$ and $\Dv$ for positive definitiveness
+    \begin{align*}
+        \Cv=\begin{bmatrix}
+                 2 & -1 & 0 \\
+                 -1 & 2 & -1 \\
+                 0 & -1 & 2
+                \end{bmatrix};
+        \Dv=\begin{bmatrix}
+                 2 & -1 & b \\
+                 -1 & 2 & -1 \\
+                 b & -1 & 2
+                \end{bmatrix}
+    \end{align*}
+    \begin{tcolorbox}[fit,height=12cm, width=\textwidth, blank, borderline={0.5pt}{-2pt},halign=center, valign=center, nobeforeafter]
+    
+    \begin{flushleft}\begin{itemize} \item \text{A square matrix is said to be positive definite, if }\textbf{it is symmetric}\text{ and }\textbf{all its eigen values are positive}\end{itemize}   \end{flushleft}\\
+    
+    %C
+    
+    \begin{flushleft} \textbf{For $C$}: \end{flushleft}\\
+    \textcolor{blue}{C is symmetric \checkmark}\\
+    \text{Calculating eigen values:  $\det(C- \lambda I) =0$}\\
+    \text{\Rightarrow\begin{vmatrix}\begin{bmatrix}
+                 2 & -1 & 0 \\
+                 -1 & 2 & -1 \\
+                 0 & -1 & 2
+                \end{bmatrix} - \lambda\begin{bmatrix}
+                 1 & 0 & 0 \\
+                 0 & 1 & 0 \\
+                 0 & 0 & 1
+                \end{bmatrix}  \end{vmatrix} =0  }\\
+    \text{$\Rightarrow \begin{vmatrix}\begin{bmatrix}
+                 2-\lambda & -1 & 0 \\
+                 -1 & 2-\lambda & -1 \\
+                 0 & -1 & 2-\lambda
+                \end{bmatrix}\end{vmatrix} =0 $}\\
+    \text{$\Rightarrow (2-\lambda)((2-\lambda)^2 -1) -1(2-\lambda) =0$}\\
+    \text{$\Rightarrow (2-\lambda)((2-\lambda^2) -2) = 0$}\\
+    \textcolor{blue}{\text{$\Rightarrow \lambda = 2,\hspace{0.1cm}2-\sqrt{2},\hspace{0.1cm}2+\sqrt{2}$}}\\
+    \textcolor{red}{\text{As all the eigen values are also positive, $\Rightarrow \Cv$ is positive definite }}
+    
+    
+    %D
+    \begin{flushleft} \textbf{For $D$}: \end{flushleft}\\
+    \textcolor{blue}{D is symmetric \checkmark}\\
+    \text{Calculating the determinant for such a matrix as $\Dv$ would get too complex.}\\
+    \text{Instead, we can use the \textbf{Sylvester's Criterion}, which says that a matrix is \textbf{positive definite},} \text{ \textbf{if all its principal minors are positive}}
+    
+    \text{First principal minor of $\Dv$, $m_1 = 2$}\\
+    \text{Second principal minor of $\Dv$, $m_2 = \det$(top left 2X2 matrix) $=\begin{vmatrix} 2 & -1 \\ -1 & 2 \end{vmatrix} = 3 $}\\
+    \text{Third principal minor of $\Dv$, $m_3 = \det$(whole matrix) $=\begin{vmatrix} 2&-1&b\\-1&2&-1\\b&-1&2 \end{vmatrix} = -2b^2 +2b +4$}\\
+    \text{For $\Dv$ to be positive definite, $m_3$ must be positive}\\
+    \text{$\Rightarrow -2b^2 +2b +4 >0 \Rightarrow b^2 -b -2 <0 \Rightarrow b\in (-1,2)$}\\
+    \textcolor{red}{\text{$\Dv$ is positive definite if $b\in(-1,2)$}}
+    
+
+
+
+    \end{tcolorbox}
+    
+    \pagebreak
+
+    \question \textbf{[3 pts]}   Estimate the singular values $\sigma_1$ and $\sigma_2$ of the matrix $\Av$
+    \begin{align*}
+        \Av = \begin{bmatrix}
+            1 & 0 \\ C & 1
+        \end{bmatrix}
+    \end{align*}
+
+    \begin{tcolorbox}[fit,height=5cm, width=\textwidth, blank, borderline={0.5pt}{-2pt},halign=center, valign=center, nobeforeafter]
+    
+    
+    \begin{flushleft}\begin{itemize} \item\text{Singular values are square roots of the eigen values of the matrix $A^T A$}\end{itemize}\end{flushleft}\\
+    \text{$M = A^TA =\begin{bmatrix}1 & C \\ 0 & 1\end{bmatrix}\begin{bmatrix}1 & 0 \\ C & 1\end{bmatrix} = \begin{bmatrix}1+C^2 & C \\ C & 1\end{bmatrix} $}\\
+    \text{Eigen values for M: \begin{vmatrix}\begin{bmatrix}1+C^2 & C \\ C & 1\end{bmatrix} - \lambda\begin{bmatrix}1 & 0\\ 0 & 1\end{bmatrix} \end{vmatrix} = 0}\\
+    \text{$\Rightarrow (1+C^2 -\lambda)(1-\lambda) - C^2 =0 \Rightarrow\hspace{0.1cm} \lambda^2 -(C^2 +2)\lambda +1 =0 \Rightarrow\hspace{0.1cm} \lambda= \frac{(C^2 +2) \pm C\sqrt{C^2+4}}{2}$}\\
+    
+    \textcolor{red}{\text{$\Rightarrow\sigma_1 =\sqrt{\frac{(C^2 +2)+ C\sqrt{C^2+4}}{2}}; \hspace{0.2cm}\sigma_2 = \sqrt{\frac{(C^2 +2) - C\sqrt{C^2+4}}{2}} $}}
+    
+    
+    \end{tcolorbox}
+
+    \question \textbf{[3 pts]}  Find the pseudoinverse of $\Av \in \mathbb{R}^{m \times n}$
+    \begin{align*}
+        \Av = \begin{bmatrix}
+            2 & 2 \\ 1 & 1
+        \end{bmatrix}
+    \end{align*}
+    \begin{tcolorbox}[fit,height=13cm, width=\textwidth, blank, borderline={0.5pt}{-2pt},halign=center, valign=center, nobeforeafter]
+    \begin{flushleft}
+    \begin{itemize}
+        \item \text{For calculating the psuedo-inverse, we need to calculate SVD of thhis matrix, as $A = U \Sigma V^T$}
+    \end{itemize}
+    \end{flushleft}\\
+    
+    \begin{flushleft}
+    \textbf{Getting singular values}:
+    \end{flushleft}\\
+    
+    \text{$M =A^T A = \begin{bmatrix}
+        5&5\\5&5
+    
+    \end{bmatrix}$   For singular values, $\det(A^T A -\lambda I) =0$}\\
+    \text{$\Rightarrow \begin{vmatrix}
+    \begin{bmatrix}
+        5&5\\5&5
+    \end{bmatrix} - \begin{bmatrix}
+        \lambda &0\\ 0 & \lambda
+    \end{bmatrix}=0
+    \end{vmatrix} \Rightarrow \lambda_1 =0; \hspace{0.1cm} \lambda_2 = 10$}\\
+    \textcolor{blue}{\text{$\Rightarrow \sigma_1 =0;\hspace{0.2cm}\sigma_2 =\sqrt{10}$}}\\
+    
+    \begin{flushleft}
+    \textbf{Getting eigen vectors}:
+    \end{flushleft}\\
+
+    \text{From $\lambda_1 =0: M\overrightarrow{v_1} =\lambda_1\overrightarrow{v_1} \hspace{0.2cm}\Rightarrow$} \textcolor{blue}{\text{$\overrightarrow{v_1} = \begin{bmatrix}
+        -\frac{1}{\sqrt{2}} \\ \frac{1}{\sqrt{2}}
+    \end{bmatrix} $}}\\
+    
+    \text{From $\lambda_2 =10: M\overrightarrow{v_2} =\lambda_2\overrightarrow{v_2} \hspace{0.2cm}\Rightarrow$} \textcolor{blue}{\text{$\overrightarrow{v_2} = \begin{bmatrix}
+        \frac{1}{\sqrt{2}} \\ \frac{1}{\sqrt{2}}
+    \end{bmatrix} $}}\\
+    
+    \begin{flushleft}
+    \textbf{Getting $U$ matrix}:
+    \end{flushleft}\\
+    
+    \text{For each singular value and vector pair, we can define the corresponding $\overrightarrow{u}$ as $A\overrightarrow{v} = \sigma \overrightarrow{u}$}\\
+    
+    \text{The first singular value, $\sigma_1 = 0\Rightarrow\hspace{0.1cm}$} \textcolor{blue}{\text{$\overrightarrow{u_1}=\begin{bmatrix}
+        0\\0
+    \end{bmatrix}$}}\\
+    
+    \text{For the second singular value, $A\overrightarrow{v_2} = \sigma_2 \overrightarrow{u_2}\Rightarrow\hspace{0.1cm} \overrightarrow{u_2} = \frac{1}{\sigma_2} A \overrightarrow{v_2} \Rightarrow\hspace{0.1cm}$} \textcolor{blue}{\text{$\overrightarrow{u_2} = \begin{bmatrix}
+        \frac{2}{\sqrt{5} \\ \frac{1}{\sqrt{5}}}
+    \end{bmatrix}$}}\\
+    
+    \text{$\Rightarrow U = \begin{bmatrix}
+        0& \frac{2}{\sqrt{5}} \\ 0 & \frac{1}{\sqrt{5}}
+    \end{bmatrix} \hspace{0.3cm} \Sigma = \begin{bmatrix}
+        0&0\\0&\sqrt{10}
+    \end{bmatrix}\hspace{0.3cm} V=\begin{bmatrix}
+        -\frac{1}{\sqrt{2}}&\frac{1}{\sqrt{2}}\\\frac{1}{\sqrt{2}}&\frac{1}{\sqrt{2}}
+    \end{bmatrix}$}\\
+    
+    \text{The psuedo-inverse of $A$, $A^{\dagger} = V \Sigma^{\dagger} U^T$ , where, $\Sigma^{\dagger} = \begin{bmatrix}
+        \frac{1}{\sigma_1} & 0\\ 0 & \frac{1}{\sigma_2}
+    \end{bmatrix}$}
+    
+    \text{In our case as one singular value is 0, so its inverse is undefined, so we use 0 in place of its inverse}\\
+    \textcolor{blue}{\text{$\Rightarrow \Sigma^{\dagger} = \begin{bmatrix}
+        0 &0\\0&\frac{1}{\sqrt{10}}
+    \end{bmatrix}$}} \text{Computing the matrix multiplication, $V \Sigma^{\dagger} U^T$, we get } \textcolor{red}{\text{$A^{\dagger} = \frac{1}{10} \begin{bmatrix}
+        2 & 1\\2&1
+    \end{bmatrix}$}}
+    
+    
+    \end{tcolorbox}
+
+    \question \textbf{[4 pts]} Suppose the following information is known about matrix $\mathbf{A}$:
+    
+    \begin{align*}
+    \mathbf{A} \begin{bmatrix}
+        1 \\2 \\1
+    \end{bmatrix} = 6\begin{bmatrix}
+        1 \\ 2 \\1
+    \end{bmatrix}, \quad \mathbf{A}\begin{bmatrix}
+        1 \\ -1 \\ 1
+    \end{bmatrix} = 3 \begin{bmatrix}
+        1 \\ -1 \\ 1
+    \end{bmatrix}, \quad \mathbf{A} \begin{bmatrix}
+        2 \\ -1 \\ 0
+    \end{bmatrix} = 3 \begin{bmatrix}
+        1 \\ -1 \\ 1
+    \end{bmatrix}
+    \end{align*}
+    \begin{enumerate}[label=\Roman*]
+        \item \textbf{[2 pts]} Find the eigenvalues of $\mathbf{A}$
+        \item \textbf{[2 pts]} In each of the following subquestions, please justify with a reason (based on the theory of eigenvalues and eigenvectors).
+        \begin{enumerate}
+            \item Is $\mathbf{A}$ a diagonalizable matrix?
+            \item Is $\mathbf{A}$ an invertible matrix?
+            % \item Is $\mathbf{A}$ a projection matrix?
+        \end{enumerate}
+
+    \end{enumerate}
+    \begin{tcolorbox}[fit,height=14cm, width=\textwidth, blank, borderline={0.5pt}{-2pt},halign=center, valign=center, nobeforeafter]
+    
+    \text{From the equations we have two eigen vectors given, $\overrightarrow{v_1} =\begin{bmatrix}
+        1 \\2 \\1
+    \end{bmatrix}; \hspace{0.2cm} \overrightarrow{v_2} = \begin{bmatrix}
+        1 \\ -1 \\ 1\end{bmatrix} $}\\
+    \text{We know that all eigen vectors are perpendicular to each other}\\
+    \text{This means, if we compute a vector perpendicular to $\overrightarrow{v_1}$ and $\overrightarrow{v_2}$, that vector should be parallel to $\overrightarrow{v_3}$}\\
+    \text{$\overrightarrow{v_{\perp}} = \overrightarrow{v_1} \times \overrightarrow{v_2} = \begin{bmatrix}
+        3\\0\\-3
+    \end{bmatrix}$ Assume $\overrightarrow{v_3} = \begin{bmatrix}
+        a\\b\\c
+    \end{bmatrix}\Rightarrow \hspace{0.2cm} \overrightarrow{v_{\perp}}\times \overrightarrow{v_3} =0$ or $v_{\perp \times} \overrightarrow{v_3} =0$}\\
+    
+    \text{$\Rightarrow \begin{bmatrix}
+        0&3&0\\-3&0&-3\\0&3&0
+    \end{bmatrix} \begin{bmatrix}
+        a\\b\\c
+    \end{bmatrix} = 0$ Solving this yields }\textcolor{blue}{\text{$\overrightarrow{v_3} =\begin{bmatrix}
+        -1\\0\\1
+    \end{bmatrix} $}}\\
+    \textbf{Given\\}
+    \begin{equation}
+        \mathbf{A}\begin{bmatrix}
+        1 \\ -1 \\ 1
+    \end{bmatrix} = 3 \begin{bmatrix}
+        1 \\ -1 \\ 1
+    \end{bmatrix}
+    \end{equation}
+    
+    \begin{equation}
+        \mathbf{A} \begin{bmatrix}
+        2 \\ -1 \\ 0
+    \end{bmatrix} = 3 \begin{bmatrix}
+        1 \\ -1 \\ 1
+    \end{bmatrix}
+    \end{equation}\\
+    
+    \text{eq(2.1) - eq(2.2) yields $A \begin{bmatrix}
+        -1\\0\\1
+    \end{bmatrix} =0 $ which is,  $A \overrightarrow{v_3} =0 \Rightarrow$}\textcolor{blue}{\text{$\hspace{0.1cm} \lambda_3 = 0$}}
+    
+    \text{So, this means the eigen values are }\textcolor{red}{\text{$\lambda_1=6\hspace{0.2cm} \lambda_2 = 3 \hspace{0.2cm} \lambda_3 = 0$}}\\
+    
+    \text{As all the eigen values are distinct and all the eigen vectors are linearly independent, this means}\\
+    \textcolor{red}{A matrix is diagonalizable}\\
+    
+    \text{As one of the eigen values is 0, this means} \textcolor{red}{A matrix is non-invertible}
+    
+    \end{tcolorbox}     
+    
+\end{questions}
+
+\clearpage
+
+\textbf{Collaboration Questions} Please answer the following:
+
+\begin{enumerate}
+    \item Did you receive any help whatsoever from anyone in solving this assignment?
+    \begin{checkboxes}
+     \CorrectChoice Yes
+     \choice No
+    \end{checkboxes}
+    \begin{itemize}
+        \item If you answered `Yes', give full details:
+        \item (e.g. “Jane Doe explained to me what is asked in Question 3.4”)
+    \end{itemize}
+
+    \begin{tcolorbox}[fit,height=3cm,blank, borderline={1pt}{-2pt},nobeforeafter]
+    \text{Siddhartha Namburu and I discussed 2.3 and 2.4}
+    \end{tcolorbox}
+
+    \item Did you give any help whatsoever to anyone in solving this assignment?
+    \begin{checkboxes}
+     \CorrectChoice Yes
+     \choice No
+    \end{checkboxes}
+    \begin{itemize}
+        \item If you answered `Yes', give full details:
+        \item (e.g. “I pointed Joe Smith to section 2.3 since he didn’t know how to proceed with Question 2”)
+    \end{itemize}
+
+    \begin{tcolorbox}[fit,height=3cm,blank, borderline={1pt}{-2pt},nobeforeafter]
+    \text{Siddhartha Namburu and I discussed 2.3 and 2.4}
+    \end{tcolorbox}
+
+    \item Did you find or come across code that implements any part of this assignment ? 
+    \begin{checkboxes}
+     \choice Yes
+     \CorrectChoice No
+    \end{checkboxes}
+    \begin{itemize}
+        \item If you answered `Yes', give full details: \underline{No}
+        \item (book \& page, URL \& location within the page, etc.).
+    \end{itemize}
+    \begin{tcolorbox}[fit,height=3cm,blank, borderline={1pt}{-2pt},nobeforeafter]
+    %Input your solution here.  Do not change any of the specifications of this solution box.
+    \end{tcolorbox}
+\end{enumerate}
+
+\end{document}
