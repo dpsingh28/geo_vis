@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
+from cv2 import destroyAllWindows
 import annotate
 from annotate import cv2
 from annotate import np
+from utils import MyWarp
+import rectifications
 import argparse
 
 def get_projective_line(p1 , p2):
@@ -48,20 +51,35 @@ if __name__ == '__main__':
     parser.add_argument('--type' , type=str , required=True , choices=['q1' , 'q2' , 'q3'])
     parser.add_argument('--image_path1' , type=str , required=False)
     parser.add_argument('--image_path2' , type=str , required=False)
+    parser.add_argument('--output_name' , type=str , required=False)
     
     args = parser.parse_args()
     qtype = args.type
 
     if(qtype == 'q1'):
         print("Affine rectification")
-        image_path1 = args.image_path1
+        image_path1 = args.image_path1        
+        output_name = args.output_name
+
         if(image_path1 == None):
             raise Exception("provided image_path1 is null")
+        if(output_name == None):
+            raise Exception("provided output_name is null")
+        
+        orig_img  = cv2.imread(image_path1)
         points = get_points(image_path1)
         lines = np.asarray(make_lines(image_path1 , points) , dtype=float)
         print("Lines recieved: \n" , lines)
         lines = lines / np.reshape(lines[:,2] , (-1,1))
         print("Lines : \n" , lines)
+        H = rectifications.affine(lines)
+        print(H)
+
+        new_img = MyWarp(orig_img , H)
+        cv2.imwrite('processed_images/affine/' + output_name + '.jpg' , new_img)
+        cv2.imshow('Affine' , new_img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
 
 
