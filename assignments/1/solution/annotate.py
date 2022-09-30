@@ -10,6 +10,7 @@ def mouseEvent(event,x,y,flags,params):
 
 def annotate(image_path):
     global points
+    points=[]
     img  = cv2.imread(image_path)
     cv2.imshow("Annotations" , img)
     cv2.setMouseCallback("Annotations" , mouseEvent)

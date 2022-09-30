@@ -71,7 +71,7 @@ if __name__ == '__main__':
         print("Affine rectification")
         lines = process_image(args)
         Ha = rectifications.affine(lines)
-        print(Ha)
+
         orig_img  = cv2.imread(args.image_path1)
         new_img = MyWarp(orig_img , Ha)
         cv2.imwrite('processed_images/affine/' + args.output_name + '.jpg' , new_img)
@@ -85,7 +85,7 @@ if __name__ == '__main__':
         print("Metric rectification")
         lines = process_image(args)
         print(lines)
-        
+
         Hp = rectifications.metric(lines)
         orig_img_m  = cv2.imread(args.image_path1)
         new_img_m = MyWarp(orig_img_m , Hp)
@@ -97,6 +97,30 @@ if __name__ == '__main__':
 
     elif(qtype == 'q3'):
         print("Homography estimation")
+        img_path1 = args.image_path1
+        img_path2 = args.image_path2
+        img1 = cv2.imread(img_path1)
+        # pts1 = get_points(img_path1)
+        pts1 = np.reshape(np.array([] , dtype=float) , (0,2))
+
+        h,w = img1.shape[:2]
+        pts1 = np.append(pts1 , np.expand_dims(np.asarray([0 ,0]) , axis=0) , axis=0)
+        pts1 = np.append(pts1 , np.expand_dims(np.asarray([0 ,w]) , axis=0) , axis=0)
+        pts1 = np.append(pts1 , np.expand_dims(np.asarray([h ,w]) , axis=0) , axis=0)
+        pts1 = np.append(pts1 , np.expand_dims(np.asarray([h ,0]) , axis=0) , axis=0)
+
+        print("pts1: \n" , pts1)
+        pts2 = get_points(img_path2)
+
+        Hh = rectifications.homography(pts1 , pts2)
+        new_img1 = MyWarp(img1 , Hh)
+        img2 = cv2.imread(img_path2)
+        # combined_img = cv2.add(img2 , new_img1)
+        cv2.imshow('combined' , new_img1)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+
     else:
         print("No such case")
     

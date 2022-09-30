@@ -1,3 +1,4 @@
+from matplotlib.pyplot import axis
 import numpy as np
 
 def affine(lines):
@@ -59,3 +60,42 @@ def metric(lines):
     print("Homography: \n", S@(u.T))
 
     return S@(u.T)
+
+
+def homography(pts1, pts2):
+    
+    # print(pts1)
+    # print(pts2)
+
+    pts1 = np.fliplr(pts1)
+    pts2 = np.fliplr(pts2)
+
+    # print(pts1)
+    # print(pts2)
+
+    ones = np.reshape(np.ones(len(pts1)) ,(-1,1))
+    pts1 = np.append(pts1 , ones , axis=1)
+    pts2 = np.append(pts2 , ones , axis=1)
+
+    # print(pts1)
+    # print(pts2)
+    
+    A = np.reshape(np.array([] , dtype=float) , (0,9))
+    for i in range(len(pts1)):
+        A = np.append(A , np.expand_dims(np.zeros(9), axis=0) , axis=0)
+        A = np.append(A , np.expand_dims(np.zeros(9), axis=0) , axis=0)
+        A[0,3:6] = -pts2[i,2]*pts1[i,:]
+        A[0,6:9] =  pts2[i,1]*pts1[i,:]
+        A[1,0:3] =  pts2[i,2]*pts1[i,:]
+        A[1,6:9] = -pts2[i,0]*pts1[i,:]
+    
+    print(A)
+
+    u,s,vh = np.linalg.svd(A)
+    vh = vh / vh[-1,-1]
+    
+    H = vh[-1,:]
+    H = np.reshape(H , (3,3))
+    print(H)
+
+    return H
