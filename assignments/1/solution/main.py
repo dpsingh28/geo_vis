@@ -100,23 +100,48 @@ if __name__ == '__main__':
         img_path1 = args.image_path1
         img_path2 = args.image_path2
         img1 = cv2.imread(img_path1)
-        # pts1 = get_points(img_path1)
-        pts1 = np.reshape(np.array([] , dtype=float) , (0,2))
-
-        h,w = img1.shape[:2]
-        pts1 = np.append(pts1 , np.expand_dims(np.asarray([0 ,0]) , axis=0) , axis=0)
-        pts1 = np.append(pts1 , np.expand_dims(np.asarray([0 ,w]) , axis=0) , axis=0)
-        pts1 = np.append(pts1 , np.expand_dims(np.asarray([h ,w]) , axis=0) , axis=0)
-        pts1 = np.append(pts1 , np.expand_dims(np.asarray([h ,0]) , axis=0) , axis=0)
-
-        print("pts1: \n" , pts1)
-        pts2 = get_points(img_path2)
-
-        Hh = rectifications.homography(pts1 , pts2)
-        new_img1 = MyWarp(img1 , Hh)
         img2 = cv2.imread(img_path2)
-        # combined_img = cv2.add(img2 , new_img1)
-        cv2.imshow('combined' , new_img1)
+
+        # pts1 = np.reshape(np.array([] , dtype=float) , (0,2))
+        # h,w = img1.shape[:2]
+        # pts1 = np.append(pts1 , np.expand_dims(np.asarray([0 ,0]) , axis=0) , axis=0)
+        # pts1 = np.append(pts1 , np.expand_dims(np.asarray([0 ,w]) , axis=0) , axis=0)
+        # pts1 = np.append(pts1 , np.expand_dims(np.asarray([h ,w]) , axis=0) , axis=0)
+        # pts1 = np.append(pts1 , np.expand_dims(np.asarray([h ,0]) , axis=0) , axis=0)
+        
+        pts1 = get_points(img_path1)
+        pts2 = get_points(img_path2)
+        
+        print(img1.shape)
+        print(img2.shape)
+
+        Hh , pts1_homo = rectifications.homography(pts1 , pts2)
+        new_img1 = MyWarp(img1 , Hh)
+        warped_img1 = np.zeros_like(img2)
+
+        #Check first point in warped image
+        nonzero_pts = np.transpose(np.nonzero(new_img1))
+        nonzero_pts = nonzero_pts[:, 0:2]
+        first_pixel = nonzero_pts[0,:]
+        ##
+
+        pts1np = np.fliplr(pts1)
+        pts2np = np.fliplr(pts2)
+        print(pts2np)
+
+        warped_img1[pts2np[0,0]- first_pixel[0]:pts2np[0,0]+new_img1.shape[0] - first_pixel[0], pts2np[0,1]- first_pixel[1]: pts2np[0,1]+new_img1.shape[1] - first_pixel[1] , :] = new_img1
+        warped_nonzero = np.nonzero(warped_img1)
+        c1_nonzero = (warped_nonzero[0] , warped_nonzero[1] , np.zeros_like(warped_nonzero[1]))
+        c2_nonzero = (warped_nonzero[0] , warped_nonzero[1] , np.ones_like(warped_nonzero[1]))
+        c3_nonzero = (warped_nonzero[0] , warped_nonzero[1] , 2*np.ones_like(warped_nonzero[1]))
+        
+        ##removing pixels in image 2
+        img2[c1_nonzero] = 0
+        img2[c2_nonzero] = 0
+        img2[c3_nonzero] = 0
+
+        combined_img = cv2.add(img2 ,warped_img1 )
+        cv2.imshow('combined' , combined_img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
