@@ -25,8 +25,6 @@ def metric(lines):
     num = len(lines)
     if(num%2 != 0): 
         num-=1
-    
-    print("num lines: ", num)
     L = np.reshape(np.array([] , dtype=float) , (0,3))
 
     for i in range(int(num/2)):
@@ -34,8 +32,6 @@ def metric(lines):
         m1 = lines[2*i +1, :]
         L = np.append(L , np.expand_dims(np.array([m1[0]*l1[0] , m1[1]*l1[0] + m1[0]*l1[1] , m1[1]*l1[1]]) , axis=0) , axis =0)
     
-    # L = L / np.expand_dims(L[-1,:] , axis=0)
-    print(L)
     u,s,vh = np.linalg.svd(L)
     vh = vh / vh[-1,-1]
     a,b,c = vh[:, -1]
@@ -45,34 +41,17 @@ def metric(lines):
     C[0,1] = b
     C[1,0] = b
     C[1,1] = c
-    print(C)
 
     u,s,vh = np.linalg.svd(C)
-    print(s)
 
     S = np.eye(3)
     S[0,0] = np.sqrt(1/s[0])
     S[1,1] = np.sqrt(1/s[1])
-    
-    print("S: ",S)
-    print("u: ", u)
-    print("vh: ", vh)
-    print("Homography: \n", S@(u.T))
 
     return S@(u.T)
 
 
 def homography(pts1, pts2):
-    
-    # print(pts1)
-    # print(pts2)
-
-    # pts1 = np.fliplr(pts1)
-    # pts2 = np.fliplr(pts2)
-
-    # print(pts1)
-    # print(pts2)
-
     ones = np.reshape(np.ones(len(pts1)) ,(-1,1))
     pts1 = np.append(pts1 , ones , axis=1)
     pts2 = np.append(pts2 , ones , axis=1)

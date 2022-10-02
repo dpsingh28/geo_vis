@@ -8,10 +8,10 @@ def mouseEvent(event,x,y,flags,params):
         print("Left button clicked")
         points.append([x,y]) 
 
-def annotate(image_path):
+def annotate(img):
     global points
     points=[]
-    img  = cv2.imread(image_path)
+    # img  = cv2.imread(image_path)
     cv2.imshow("Annotations" , img)
     cv2.setMouseCallback("Annotations" , mouseEvent)
     cv2.waitKey(0)
