@@ -7,3 +7,6 @@
 [submodule "probelm_sets/2/PS2"]
 	path = probelm_sets/2/PS2
 	url = https://github.com/geometric3d/PS2.git
+[submodule "probelm_sets/3/PS3"]
+	path = probelm_sets/3/PS3
+	url = https://github.com/geometric3d/PS3.git
