@@ -23,26 +23,29 @@ def get_cam_matrix(im_pts, world_pts):
     # P = P / P[-1,-1]
     return P
 
-def get_w3(vanish_pts):
+def get_K3(vanish_pts):
     v1 = vanish_pts[0,:]
     v2 = vanish_pts[1,:]
     v3 = vanish_pts[2,:]
 
     A = np.reshape(np.array([] , dtype=float) , (0,4))
-    A = np.vstack(( A , np.array([[v1[0]*v2[0]+v1[1]*v2[1] , v1[0]*v2[2] , v1[1]*v2[2] , v1[2]*v2[2]]]) ))
-    A = np.vstack(( A , np.array([[v2[0]*v3[0]+v2[1]*v3[1] , v2[0]*v3[2] , v2[1]*v3[2] , v2[2]*v3[2]]]) ))
-    A = np.vstack(( A , np.array([[v3[0]*v1[0]+v3[1]*v1[1] , v3[0]*v1[2] , v3[1]*v1[2] , v3[2]*v1[2]]]) ))
+    A = np.vstack(( A , np.array([[v1[0]*v2[0]+v1[1]*v2[1] , v1[0]*v2[2] + v1[2]*v2[0] , v1[1]*v2[2] + v1[2]*v2[1] , v1[2]*v2[2] ]]) ))
+    A = np.vstack(( A , np.array([[v2[0]*v3[0]+v2[1]*v3[1] , v2[0]*v3[2] + v2[2]*v3[0] , v2[1]*v3[2] + v2[2]*v3[1] , v2[2]*v3[2] ]]) ))
+    A = np.vstack(( A , np.array([[v3[0]*v1[0]+v3[1]*v1[1] , v3[0]*v1[2] + v3[2]*v1[0] , v3[1]*v1[2] + v3[2]*v1[1] , v3[2]*v1[2] ]]) ))
 
     u,s,vh = np.linalg.svd(A)
+    print(u , '\n',s,'\n' ,vh)
     w_params = vh[-1,:]
     w_params = w_params / w_params[-1]
     w_params = w_params[0:3]
     a,b,c = w_params
 
-    w_mat = np.eye(3)
-    w_mat[0,0] = a
-    w_mat[1,1] = a
-    w_mat[0,2] = b
-    w_mat[1,2] = c
+    w_mat = np.array([[a , 0 , b],[0 , a , c],[b , c , 1]])
 
-    return w_mat
+    print("w matrix:\n",w_mat)
+    
+    # print("IAC value:\n", w_mat)
+    L = np.linalg.cholesky(w_mat)
+    K = np.linalg.inv(L.T)
+    K = K / K[-1,-1]
+    return K

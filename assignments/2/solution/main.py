@@ -1,7 +1,7 @@
 import numpy as np 
 import cv2
 import argparse
-from solvers import get_cam_matrix, get_w3
+from solvers import get_cam_matrix, get_K3
 from annotate import annotate
 
 def project_and_normalize_pts(pts):
@@ -30,15 +30,6 @@ def draw_2dline(pt_set1 , pt_set2 , image):
         line_img = cv2.line(new_img , img_pt_set1[i,:] , img_pt_set2[i,:] , (255,0,0) , 5)
 
     return line_img
-
-# def make_2d_lines(pts1 , pts2):
-#     assert pts1.shape==pts2.shape , "Shape of both point sets should be same, to make a line"
-#     lines = np.reshape(np.array([] , dtype=float) , (0,3))
-
-#     for i in range(pts1.shape[0]):
-#         new_line = np.cross(pts1[i,:] , pts2[i,:])
-#         lines = np.vstack((lines , new_line))
-#     return lines
 
 def get_projective_line(p1 , p2):
     P = np.vstack((np.reshape(p1 , (1,-1)),np.reshape(p2,(1,-1))))
@@ -164,10 +155,7 @@ if __name__== '__main__':
         for i in range(int(lines.shape[0]/2)):
             new_pt =np.cross(lines[2*i,:],lines[2*i+1,:])
             vanish_pts = np.vstack((vanish_pts , np.reshape(new_pt, (1,-1))))
-        w = get_w3(vanish_pts)
-        print("IAC value:\n", w)
-        L = np.linalg.cholesky(w)
-        K = np.linalg.inv(L.T)
+        K = get_K3(vanish_pts)
         print("Instrinsics matrix: \n", K)
 
         print_img = build_img.copy()
@@ -193,3 +181,6 @@ if __name__== '__main__':
         cv2.waitKey(0)
         cv2.destroyAllWindows()
         cv2.imwrite('./submissions/building_vanish_pts.jpg' , vanish_line_img)
+
+    elif(args.type == '2b'):
+        pass
