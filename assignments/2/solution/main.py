@@ -1,3 +1,4 @@
+from math import pi
 import numpy as np 
 import cv2
 import argparse
@@ -54,9 +55,10 @@ def show_img(window_name , image):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-def fill_poly(poly_img , poly_pts):
-    cv2.fillPoly(poly_img , pts=[poly_pts] , color=(255,255,255))
-    show_img("Polygon" , poly_img)
+def fill_poly(poly_img , poly_pts , clr):
+    new_img = poly_img.copy()
+    cv2.fillPoly(new_img , pts=[poly_pts] , color=clr)
+    show_img("Polygon" , new_img)
 
 def make_lines(img, points):
     new_img = img.copy()
@@ -79,9 +81,41 @@ def make_lines(img, points):
     # cv2.imwrite('processed_images/annotations/' + out_name + '.jpg' , line_img)
     return lines
 
+def get_angle(n1 , n2):
+    rad = np.arccos(np.dot(n1,n2)/(np.linalg.norm(n1)*np.linalg.norm(n2)))
+    deg = (rad*180)/pi
+    return deg
+
+def angles_from_pts(sq_img , sq_pt1 , sq_pt2 , sq_pt3):
+        sq_temp1 = sq_pt1.copy()
+        sq_temp1[1:, :] = np.roll(sq_temp1[1:, :] , 1, axis=0)
+        sq_temp2 = sq_pt2.copy()
+        sq_temp2[1:, :] = np.roll(sq_temp2[1:, :] , 1, axis=0)
+        sq_temp3 = sq_pt3.copy()
+        sq_temp3[1:, :] = np.roll(sq_temp3[1:, :] , 1, axis=0) 
+        pts_matrix = np.array(np.vstack((sq_pt1 , sq_temp1 , sq_pt2 , sq_temp2 , sq_pt3  ,sq_temp3))  , dtype=int)
+
+        lines = make_lines(sq_img , pts_matrix)
+        v=[]
+        for i in range(int(len(lines)/2)):
+            v.append(np.cross(lines[2*i,:] , lines[2*i +1,:] ))
+        v= np.asarray(v)
+        print("Vanishing points:\n", v)
+
+        dir_vec = (np.linalg.inv(K) @ v.T).T
+        normals= []
+        for i in range(int(len(dir_vec)/2)):
+            normals.append(np.cross(dir_vec[2*i,:] , dir_vec[2*i+1,:] ))
+        normals = np.asarray(normals)
+        print("Normals:\n",normals)
+
+        print("1 and 2:", get_angle(normals[0,:] , normals[1,:]))
+        print("2 and 3:", get_angle(normals[1,:] , normals[2,:]))
+        print("3 and 1:", get_angle(normals[2,:] , normals[0,:]))
+
 if __name__== '__main__':
     parser = argparse.ArgumentParser(description="main file for assignment 2 of 16822 Geometry-Based Vision")
-    parser.add_argument('--type' ,required=True, choices=['1a' , '1b' , '2a' , '2b'])
+    parser.add_argument('--type' ,required=True, choices=['1a' , '1b' , '2a' , '2b' , '2c'])
 
     args = parser.parse_args()
 
@@ -180,37 +214,43 @@ if __name__== '__main__':
 
     elif(args.type == '2b'):
         square_img = cv2.imread('../assignment2/data/q2b.png')
-
         square_pts = np.load('../assignment2/data/q2/q2b.npy')
-        # print(square_pts[0,:,:])
         annotations.vis_annnotations_q2b()
-        
         square_pts1 = square_pts[0,:,:]
         square_pts2 = square_pts[1,:,:]
         square_pts3 = square_pts[2,:,:]
-        
-        # print("\033[1;31mAdd first square points in a clockwise manner,\033[33m starting from bottom left\033[0m")
-        # square_pts1 = annotate(square_img)
-        # print_square = square_img.copy()
-        # fill_poly(print_square , square_pts1)
-
-        # print("\033[1;31mAdd second square points in a clockwise manner,\033[33m starting from bottom left\033[0m")
-        # square_pts2 = annotate(square_img)
-        # print_square = square_img.copy()
-        # fill_poly(print_square , square_pts2)
-
-        # print("\033[1;31mAdd third square points in a clockwise manner,\033[33m starting from bottom left\033[0m")
-        # square_pts3 = annotate(square_img)
-        # print_square = square_img.copy()
-        # fill_poly(print_square , square_pts3)
+        print(square_pts1)
 
         H1 = get_H(project_and_normalize_pts(square_pts1) , 1)
         H2 = get_H(project_and_normalize_pts(square_pts2) , 1)
         H3 = get_H(project_and_normalize_pts(square_pts3) , 1)
-
-        print(H1)
-        print(H2)
-        print(H3)
         
         K = get_K5(H1,H2,H3)
         print("Instrinsics Matrix: \n", K)
+        angles_from_pts(square_img , square_pts1 , square_pts2  ,square_pts3)
+        
+    
+    elif(args.type == '2c'):
+        wh1 = 32.5/14.5
+        wh2 = 14/9
+        wh3 = 14/9.25
+        square_img = cv2.imread('./new_data/rectangle.jpg')
+        print("\033[1;31mAdd first square points in a clockwise manner,\033[33m starting from top left\033[0m")
+        square_pts1 = annotate(square_img)
+        fill_poly(square_img , square_pts1 , (255,255,255))
+
+        print("\033[1;31mAdd second square points in a clockwise manner,\033[33m starting from top left\033[0m")
+        square_pts2 = annotate(square_img)
+        fill_poly(square_img , square_pts2 , (255,0,0))
+
+        print("\033[1;31mAdd third square points in a clockwise manner,\033[33m starting from top left\033[0m")
+        square_pts3 = annotate(square_img)
+        fill_poly(square_img , square_pts3 , (0,255,0))
+
+        H1 = get_H(project_and_normalize_pts(square_pts1) , wh1)
+        H2 = get_H(project_and_normalize_pts(square_pts2) , wh2)
+        H3 = get_H(project_and_normalize_pts(square_pts3) , wh3)
+
+        K = get_K5(H1,H2,H3)
+        print("Instrinsics Matrix: \n", K)        
+        angles_from_pts(square_img , square_pts1 , square_pts2  ,square_pts3)

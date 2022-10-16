@@ -59,7 +59,7 @@ def get_H(sq_pts , wh_ratio):
         A[2*i+1,6:9] =  -pts2[i,0]*pts1[i,:]
 
     
-    u,s,vh = np.linalg.svd(A)
+    _,_,vh = np.linalg.svd(A)
     vh = vh / vh[-1,-1]
     H = vh[-1,:]
     H = np.reshape(H , (3,3))
@@ -85,15 +85,7 @@ def get_K5(H1 , H2, H3):
 
     _,_,vh = np.linalg.svd(A)
     w = vh[-1,:]
-    # w = w/w[-1]
-
-    w1 = w[0]
-    w2 = w[1]
-    w3 = w[2]
-    w4 = w[3]
-    w5 = w[4]
-    w6 = w[5]
-
+    w1,w2,w3,w4,w5,w6 = w
     w_mat = np.array( [[w1 , w2 , w3] , [w2 , w4 , w5] , [w3 , w5 , w6]] )
     print("W matrix (IAC) is:\n", w_mat)
 
