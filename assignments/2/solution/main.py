@@ -113,9 +113,18 @@ def angles_from_pts(sq_img , sq_pt1 , sq_pt2 , sq_pt3):
         print("2 and 3:", get_angle(normals[1,:] , normals[2,:]))
         print("3 and 1:", get_angle(normals[2,:] , normals[0,:]))
 
+def get_vanishpts(vanish_lines):
+    vanishpts = np.reshape(np.array([] , dtype=float) ,(0,3))
+    for i in range(int(vanish_lines.shape[0]/2)):
+        new_pt =np.cross(vanish_lines[2*i,:],vanish_lines[2*i+1,:])
+        vanishpts = np.vstack((vanishpts , np.reshape(new_pt, (1,-1))))
+    return vanishpts
+
+############################################################################### Main Function ###############################################################################
+
 if __name__== '__main__':
     parser = argparse.ArgumentParser(description="main file for assignment 2 of 16822 Geometry-Based Vision")
-    parser.add_argument('--type' ,required=True, choices=['1a' , '1b' , '2a' , '2b' , '2c'])
+    parser.add_argument('--type' ,required=True, choices=['1a' , '1b' , '2a' , '2b' , '2c' , '3a'])
 
     args = parser.parse_args()
 
@@ -131,22 +140,17 @@ if __name__== '__main__':
 
         surface_pts = np.load('../assignment2/data/q1/bunny_pts.npy')
         surface_pts = project_and_normalize_pts(surface_pts)
-
         img_pts = (P@surface_pts.T).T
-        # print(img_pts)
         img_pts = img_pts / np.reshape(img_pts[:,-1] , (-1,1))
         img_pts = np.array(img_pts[: , 0:2] , dtype=int)
-        # print(img_pts)
 
         bunny_img = cv2.imread('../assignment2/data/q1/bunny.jpeg')
         for pt in img_pts:
             cv2.drawMarker(bunny_img, (pt[0], pt[1]),(0,0,255), markerType=cv2.MARKER_DIAMOND, markerSize=10, thickness=1)
-        
         show_img('Bunny' , bunny_img)
         cv2.imwrite( './submissions/bunny_pts.jpg' , bunny_img)
 
-
-    #Bounding Box
+        #Bounding Box
         new_bunny = cv2.imread('../assignment2/data/q1/bunny.jpeg')
         lines = np.load('../assignment2/data/q1/bunny_bd.npy')
         pt_set1 = lines[:,0:3]
@@ -182,17 +186,16 @@ if __name__== '__main__':
     
     elif(args.type == '2a'):
         build_img = cv2.imread('../assignment2/data/q2a.png')
-
-        line_pts = annotate(build_img)
+        new_line_pts = np.load('./data/q2/q2a.npy')
+        line_pts = np.vstack((new_line_pts[0,:,:] , new_line_pts[1,:,:] , new_line_pts[2,:,:]))
+        line_pts = np.reshape(line_pts , (-1,2))
         lines = make_lines(build_img , line_pts)
-        vanish_pts = np.reshape(np.array([] , dtype=float) ,(0,3))
 
-        for i in range(int(lines.shape[0]/2)):
-            new_pt =np.cross(lines[2*i,:],lines[2*i+1,:])
-            vanish_pts = np.vstack((vanish_pts , np.reshape(new_pt, (1,-1))))
+        vanish_pts = get_vanishpts(lines)
         K = get_K3(vanish_pts)
         print("Instrinsics matrix: \n", K)
 
+        #Visualization of vanishing points
         print_img = build_img.copy()
         print_vanish_pts = np.array(vanish_pts[:,0:2] / np.reshape(vanish_pts[:,2] , (-1,1)) , dtype=int)
         max_pt = np.max(np.absolute(print_vanish_pts))
@@ -219,7 +222,6 @@ if __name__== '__main__':
         square_pts1 = square_pts[0,:,:]
         square_pts2 = square_pts[1,:,:]
         square_pts3 = square_pts[2,:,:]
-        print(square_pts1)
 
         H1 = get_H(project_and_normalize_pts(square_pts1) , 1)
         H2 = get_H(project_and_normalize_pts(square_pts2) , 1)
