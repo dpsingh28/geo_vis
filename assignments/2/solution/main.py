@@ -1,7 +1,7 @@
 import numpy as np 
 import cv2
 import argparse
-from solvers import get_cam_matrix, get_K3
+from solvers import get_cam_matrix, get_K3,  get_H, get_K5
 from annotate import annotate
 
 def project_and_normalize_pts(pts):
@@ -48,6 +48,15 @@ def flip_color(color):
     else:
         return (255,0,0)
 
+def show_img(window_name , image):
+    cv2.imshow(window_name , image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+def fill_poly(poly_img , poly_pts):
+    cv2.fillPoly(poly_img , pts=[poly_pts] , color=(255,255,255))
+    show_img("Polygon" , poly_img)
+
 def make_lines(img, points):
     new_img = img.copy()
     color = (255,0,0)
@@ -65,11 +74,8 @@ def make_lines(img, points):
         line_img = cv2.line(new_img , p1, p2 , color , 2)
         lines = np.append(lines , get_projective_line(p1,p2) ,axis =0)
 
-    cv2.imshow("Line" , line_img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    show_img("Line" , line_img)
     # cv2.imwrite('processed_images/annotations/' + out_name + '.jpg' , line_img)
-
     return lines
 
 if __name__== '__main__':
@@ -101,9 +107,7 @@ if __name__== '__main__':
         for pt in img_pts:
             cv2.drawMarker(bunny_img, (pt[0], pt[1]),(0,0,255), markerType=cv2.MARKER_DIAMOND, markerSize=10, thickness=1)
         
-        cv2.imshow('Bunny' , bunny_img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        show_img('Bunny' , bunny_img)
         cv2.imwrite( './submissions/bunny_pts.jpg' , bunny_img)
 
 
@@ -114,9 +118,7 @@ if __name__== '__main__':
         pt_set2 = lines[:,3:6]
         line_img = draw_2dline(pt_set1 , pt_set2 , new_bunny)
 
-        cv2.imshow("Cuboid" , line_img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        show_img("Cuboid" , line_img)
         cv2.imwrite( './submissions/bunny_bbox.jpg' , line_img)
     
     elif(args.type == '1b'):
@@ -140,9 +142,7 @@ if __name__== '__main__':
         pt_set_3d_2 = np.vstack((pt_set_3d_2 , np.delete(pts_3d_orig ,(0,1,3,4) , 0)))
 
         line_img = draw_2dline(pt_set_3d_1 , pt_set_3d_2 , cuboid)
-        cv2.imshow('Cuboid' , line_img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        show_img('Cuboid' , line_img)
         cv2.imwrite('./submissions/cuboid_lines.jpg' , line_img)
     
     elif(args.type == '2a'):
@@ -166,10 +166,7 @@ if __name__== '__main__':
         for pt in print_vanish_pts:
             cv2.drawMarker(print_img, (pt[0], pt[1]),(0,0,255), markerType=cv2.MARKER_DIAMOND, markerSize=20, thickness=20)
         
-        cv2.imshow('Vanishing Points' , print_img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-
+        show_img('Vanishing Points' , print_img)
         print_vanish_pts = np.vstack((print_vanish_pts , print_vanish_pts))
         vanish_line_img = print_img.copy()
         for i in range(int(len(print_vanish_pts) /2)):
@@ -177,10 +174,34 @@ if __name__== '__main__':
             p2 = print_vanish_pts[2*i +1,:]
             cv2.line(vanish_line_img, p1, p2 , (255,0,0) , 10)
 
-        cv2.imshow('Vanishing Points with Line' , vanish_line_img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        show_img('Vanishing Points with Line' , vanish_line_img)
         cv2.imwrite('./submissions/building_vanish_pts.jpg' , vanish_line_img)
 
     elif(args.type == '2b'):
-        pass
+        square_img = cv2.imread('../assignment2/data/q2b.png')
+        
+        print("\033[1;31mAdd first square points in a clockwise manner,\033[33m starting from bottom left\033[0m")
+        square_pts1 = annotate(square_img)
+        print_square = square_img.copy()
+        fill_poly(print_square , square_pts1)
+
+        print("\033[1;31mAdd second square points in a clockwise manner,\033[33m starting from bottom left\033[0m")
+        square_pts2 = annotate(square_img)
+        print_square = square_img.copy()
+        fill_poly(print_square , square_pts2)
+
+        print("\033[1;31mAdd third square points in a clockwise manner,\033[33m starting from bottom left\033[0m")
+        square_pts3 = annotate(square_img)
+        print_square = square_img.copy()
+        fill_poly(print_square , square_pts3)
+
+        H1 = get_H(project_and_normalize_pts(square_pts1) , 1)
+        H2 = get_H(project_and_normalize_pts(square_pts2) , 1)
+        H3 = get_H(project_and_normalize_pts(square_pts3) , 1)
+
+        # print(H1)
+        # print(H2)
+        # print(H3)
+        
+        K = get_K5(H1,H2,H3)
+        print("Instrinsics Matrix: \n", K)
