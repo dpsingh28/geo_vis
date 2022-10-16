@@ -47,16 +47,17 @@ def get_K3(vanish_pts):
     return K
 
 def get_H(sq_pts , wh_ratio):
-    pts1 = sq_pts
-    pts2 = np.array([[0,0,1],[0,1,1],[wh_ratio*1,1,1],[wh_ratio*1,0,1]])
+    pts2 = sq_pts
+    pts1 = np.array([[0,1,1],[wh_ratio*1,1,1],[wh_ratio*1,0,1] , [0,0,1]])
     A = np.reshape(np.array([] , dtype=float) , (0,9))
     for i in range(len(pts1)):
         A = np.append(A , np.expand_dims(np.zeros(9), axis=0) , axis=0)
         A = np.append(A , np.expand_dims(np.zeros(9), axis=0) , axis=0)
-        A[2*i+1,3:6] = -pts2[i,2]*pts1[i,:]
-        A[2*i+1,6:9] =  pts2[i,1]*pts1[i,:]
-        A[2*i,0:3] =  -pts2[i,2]*pts1[i,:]
-        A[2*i,6:9] = pts2[i,0]*pts1[i,:]
+        A[2*i,3:6] =  -pts2[i,2]*pts1[i,:]
+        A[2*i,6:9] = pts2[i,1]*pts1[i,:]
+        A[2*i+1,0:3] = pts2[i,2]*pts1[i,:]
+        A[2*i+1,6:9] =  -pts2[i,0]*pts1[i,:]
+
     
     u,s,vh = np.linalg.svd(A)
     vh = vh / vh[-1,-1]
@@ -71,10 +72,12 @@ def get_K5(H1 , H2, H3):
         As = np.reshape(np.array([] , dtype=float) , (0,6))
         X = H[:,0]
         Y = H[:,1]
+        x1,x2,x3 =X
+        y1,y2,y3 =Y
         # print(np.squeeze(np.hstack((np.reshape(X[0]*Y , (1,-1)) , np.reshape( X[1]*Y[1:] , (1,-1)) , np.array([[X[2]*Y[2]]]))) ))
-        As = np.vstack(( As , np.squeeze(np.hstack((np.reshape(X[0]*Y , (1,-1)) , np.reshape( X[1]*Y[1:] , (1,-1)) , np.array([[X[2]*Y[2]]]))) ) ))
-        As = np.vstack(( As , np.squeeze(np.hstack((np.reshape(X[0]*X , (1,-1)) , np.reshape( X[1]*X[1:] , (1,-1)) , np.array([[X[2]*X[2]]]))) ) 
-                           - np.squeeze(np.hstack((np.reshape(Y[0]*Y , (1,-1)) , np.reshape( Y[1]*Y[1:] , (1,-1)) , np.array([[Y[2]*Y[2]]]))) ) ))
+        As = np.vstack(( As , np.array([[x1*y1, x1*y2+x2*y1, x1*y3+x3*y1, x2*y2, x2*y3+x3*y2, x3*y3]])))
+        As = np.vstack(( As , np.array([[x1*x1, x1*x2+x2*x1, x1*x3+x3*x1, x2*x2, x2*x3+x3*x2, x3*x3]])
+                             -np.array([[y1*y1, y1*y2+y2*y1, y1*y3+y3*y1, y2*y2, y2*y3+y3*y2, y3*y3]])))
         return As
 
     A = np.vstack((A , A_sub(H1) , A_sub(H2) , A_sub(H3) ))
@@ -96,5 +99,6 @@ def get_K5(H1 , H2, H3):
 
     L = np.linalg.cholesky(w_mat)
     K = np.linalg.inv(L.T)
+    K = K /K[-1,-1]
 
     return K

@@ -3,6 +3,7 @@ import cv2
 import argparse
 from solvers import get_cam_matrix, get_K3,  get_H, get_K5
 from annotate import annotate
+import annotations
 
 def project_and_normalize_pts(pts):
     # print("Incoming points: \n",pts)
@@ -179,29 +180,37 @@ if __name__== '__main__':
 
     elif(args.type == '2b'):
         square_img = cv2.imread('../assignment2/data/q2b.png')
+
+        square_pts = np.load('../assignment2/data/q2/q2b.npy')
+        # print(square_pts[0,:,:])
+        annotations.vis_annnotations_q2b()
         
-        print("\033[1;31mAdd first square points in a clockwise manner,\033[33m starting from bottom left\033[0m")
-        square_pts1 = annotate(square_img)
-        print_square = square_img.copy()
-        fill_poly(print_square , square_pts1)
+        square_pts1 = square_pts[0,:,:]
+        square_pts2 = square_pts[1,:,:]
+        square_pts3 = square_pts[2,:,:]
+        
+        # print("\033[1;31mAdd first square points in a clockwise manner,\033[33m starting from bottom left\033[0m")
+        # square_pts1 = annotate(square_img)
+        # print_square = square_img.copy()
+        # fill_poly(print_square , square_pts1)
 
-        print("\033[1;31mAdd second square points in a clockwise manner,\033[33m starting from bottom left\033[0m")
-        square_pts2 = annotate(square_img)
-        print_square = square_img.copy()
-        fill_poly(print_square , square_pts2)
+        # print("\033[1;31mAdd second square points in a clockwise manner,\033[33m starting from bottom left\033[0m")
+        # square_pts2 = annotate(square_img)
+        # print_square = square_img.copy()
+        # fill_poly(print_square , square_pts2)
 
-        print("\033[1;31mAdd third square points in a clockwise manner,\033[33m starting from bottom left\033[0m")
-        square_pts3 = annotate(square_img)
-        print_square = square_img.copy()
-        fill_poly(print_square , square_pts3)
+        # print("\033[1;31mAdd third square points in a clockwise manner,\033[33m starting from bottom left\033[0m")
+        # square_pts3 = annotate(square_img)
+        # print_square = square_img.copy()
+        # fill_poly(print_square , square_pts3)
 
         H1 = get_H(project_and_normalize_pts(square_pts1) , 1)
         H2 = get_H(project_and_normalize_pts(square_pts2) , 1)
         H3 = get_H(project_and_normalize_pts(square_pts3) , 1)
 
-        # print(H1)
-        # print(H2)
-        # print(H3)
+        print(H1)
+        print(H2)
+        print(H3)
         
         K = get_K5(H1,H2,H3)
         print("Instrinsics Matrix: \n", K)
