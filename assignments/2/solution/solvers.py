@@ -79,8 +79,6 @@ def get_K5(H1 , H2, H3):
         return As
 
     A = np.vstack((A , A_sub(H1) , A_sub(H2) , A_sub(H3) ))
-    print("A matrix:\n", A)
-
     _,_,vh = np.linalg.svd(A)
     w = vh[-1,:]
     w1,w2,w3,w4,w5,w6 = w

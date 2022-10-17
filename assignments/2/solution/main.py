@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import math
 import time
+from turtle import color
 import numpy as np
 import open3d as o3d
 import cv2
@@ -9,6 +10,7 @@ from solvers import get_cam_matrix, get_K3,  get_H, get_K5
 from annotate import annotate
 import annotations
 from shapely.geometry import Polygon, Point
+import matplotlib.pyplot as plt
 
 def project_and_normalize_pts(pts):
     # print("Incoming points: \n",pts)
@@ -111,9 +113,9 @@ def angles_and_normals_from_pts(sq_img , sq_pts , intrinsics):
     normals = np.asarray(normals)
     print("Normals:\n",normals)
 
-    print("1 and 2:", get_angle(normals[0,:] , normals[1,:]))
-    print("2 and 3:", get_angle(normals[1,:] , normals[2,:]))
-    print("3 and 1:", get_angle(normals[2,:] , normals[0,:]))
+    print("Angle between plane 1 and 2:", get_angle(normals[0,:] , normals[1,:]))
+    print("Angle between plane 2 and 3:", get_angle(normals[1,:] , normals[2,:]))
+    print("Angle between plane 3 and 1:", get_angle(normals[2,:] , normals[0,:]))
     return normals
 
 def get_vanishpts(vanish_lines):
@@ -136,7 +138,7 @@ if __name__== '__main__':
 
     if(args.type == '1a'):
         print("\033[1;31mBunny \033[1;0m")
-        points  = np.loadtxt('../assignment2/data/q1/bunny.txt')
+        points  = np.loadtxt('./data/q1/bunny.txt')
         pts2 = points[:,0:2]
         pts3 = points[:,2:]
         pts2 = project_and_normalize_pts(pts2)
@@ -144,13 +146,13 @@ if __name__== '__main__':
         P = get_cam_matrix(pts2 , pts3)
         print("\033[1;33mCamera Matrix:\n" , P, "\033[1;0m")
 
-        surface_pts = np.load('../assignment2/data/q1/bunny_pts.npy')
+        surface_pts = np.load('./data/q1/bunny_pts.npy')
         surface_pts = project_and_normalize_pts(surface_pts)
         img_pts = (P@surface_pts.T).T
         img_pts = img_pts / np.reshape(img_pts[:,-1] , (-1,1))
         img_pts = np.array(img_pts[: , 0:2] , dtype=int)
 
-        bunny_img = cv2.imread('../assignment2/data/q1/bunny.jpeg')
+        bunny_img = cv2.imread('./data/q1/bunny.jpeg')
         for pt in img_pts:
             cv2.drawMarker(bunny_img, (pt[0], pt[1]),(0,0,255), markerType=cv2.MARKER_DIAMOND, markerSize=10, thickness=1)
         show_img('Bunny' , bunny_img)
@@ -160,8 +162,8 @@ if __name__== '__main__':
 
 
         #Bounding Box
-        new_bunny = cv2.imread('../assignment2/data/q1/bunny.jpeg')
-        lines = np.load('../assignment2/data/q1/bunny_bd.npy')
+        new_bunny = cv2.imread('./data/q1/bunny.jpeg')
+        lines = np.load('./data/q1/bunny_bd.npy')
         pt_set1 = lines[:,0:3]
         pt_set2 = lines[:,3:6]
         line_img = draw_2dline(pt_set1 , pt_set2 , new_bunny)
@@ -194,6 +196,7 @@ if __name__== '__main__':
         pt_set_3d_2 = np.vstack((pt_set_3d_2 , np.delete(pts_3d_orig ,(0,1,3,4) , 0)))
 
         line_img = draw_2dline(pt_set_3d_1 , pt_set_3d_2 , cuboid)
+        print("Drawing lines on 2 front faces of the cuboid")
         show_img('Cuboid' , line_img)
         save_path = './submissions/cuboid_lines.jpg'
         cv2.imwrite(save_path , line_img)
@@ -201,7 +204,7 @@ if __name__== '__main__':
 
     
     elif(args.type == '2a'):
-        build_img = cv2.imread('../assignment2/data/q2a.png')
+        build_img = cv2.imread('./data/q2a.png')
         new_line_pts = np.load('./data/q2/q2a.npy')
         
         line_pts = np.vstack((new_line_pts[0,:,:] , new_line_pts[1,:,:] , new_line_pts[2,:,:]))
@@ -235,8 +238,8 @@ if __name__== '__main__':
 
 
     elif(args.type == '2b'):
-        square_img = cv2.imread('../assignment2/data/q2b.png')
-        square_pts = np.load('../assignment2/data/q2/q2b.npy')
+        square_img = cv2.imread('./data/q2b.png')
+        square_pts = np.load('./data/q2/q2b.npy')
         annotations.vis_annnotations_q2b()
 
         square_pts1 = square_pts[0,:,:]
@@ -257,15 +260,15 @@ if __name__== '__main__':
         wh2 = 14/9
         wh3 = 14/9.25
         square_img = cv2.imread('./new_data/rectangle.jpg')
-        print("\033[1;31mAdd first square points in a clockwise manner,\033[33m starting from top left\033[0m")
+        print("\033[1;31mAdd first rectangle points in a clockwise manner,\033[33m starting from top left\033[0m")
         square_pts1 = annotate(square_img)
         fill_poly(square_img , square_pts1 , (255,255,255))
 
-        print("\033[1;31mAdd second square points in a clockwise manner,\033[33m starting from top left\033[0m")
+        print("\033[1;31mAdd second rectangle points in a clockwise manner,\033[33m starting from top left\033[0m")
         square_pts2 = annotate(square_img)
         fill_poly(square_img , square_pts2 , (255,0,0))
 
-        print("\033[1;31mAdd third square points in a clockwise manner,\033[33m starting from top left\033[0m")
+        print("\033[1;31mAdd third rectangle points in a clockwise manner,\033[33m starting from top left\033[0m")
         square_pts3 = annotate(square_img)
         fill_poly(square_img , square_pts3 , (0,255,0))
 
@@ -289,6 +292,8 @@ if __name__== '__main__':
         print("Plane points are:\n",plane_pts)
         annotations.vis_annotations_q3()
 
+        print(plane_pts[0,:,:])
+
         polygon1 = Polygon(plane_pts[0,:,:])
         polygon2 = Polygon(plane_pts[1,:,:])
         polygon3 = Polygon(plane_pts[2,:,:])
@@ -298,7 +303,7 @@ if __name__== '__main__':
         xs = np.arange(0, building_img.shape[1] , 1)
         ys = np.arange(0, building_img.shape[0] , 1)
         xv , yv = np.meshgrid(xs,ys)
-        coords = np.vstack([yv.ravel() , xv.ravel()])
+        coords = np.vstack([xv.ravel() , yv.ravel()])
         
         def get_polygon_pts(polygon):
             pts_p = np.reshape(np.array([] , dtype=int) , (2,0))
@@ -309,8 +314,6 @@ if __name__== '__main__':
                 else:
                     print("Calculating points in different planes : false")
             return pts_p
-
-
         assert args.first_run!=None , "Please input first_run variable value"
 
         if(args.first_run == 'True'):
@@ -372,15 +375,89 @@ if __name__== '__main__':
         proj_ptsp4 = project_and_normalize_pts(pts_p4.T).T
         proj_ptsp5 = project_and_normalize_pts(pts_p5.T).T
 
-        print("Evaluating direction vectors for all points")
-
-        start_time = time.time()
+        # start_time = time.time()
         K_3ai = np.linalg.inv(K_3a)
         d1 = K_3ai@proj_ptsp1        
         d2 = K_3ai@proj_ptsp2        
         d3 = K_3ai@proj_ptsp3        
         d4 = K_3ai@proj_ptsp4        
         d5 = K_3ai@proj_ptsp5
-        end_time = time.time()
+        # end_time = time.time()
+        # print("Time taken: ", end_time-start_time)
 
-        print("Time taken: ", end_time-start_time)
+        #Plane variables calculations
+        main_ref_pt = np.reshape(plane_pts[0,2,:] , (1,-1))
+        proj_main_ref_pt = project_and_normalize_pts(main_ref_pt)
+        # proj_main_ref_pt = np.array([[main_ref_pt[0,0] , main_ref_pt[0,1] , 1]])
+        main_ref_pt_3d = K_3ai @ proj_main_ref_pt.T
+        
+        #planes 1,2,3
+        a1 = -n1@main_ref_pt_3d
+        a2 = -n2@main_ref_pt_3d
+        a3 = -n3@main_ref_pt_3d
+
+        second_ref_pt = np.reshape(plane_pts[0,1,:] , (1,-1))
+        proj_second_ref_pt = project_and_normalize_pts(second_ref_pt)
+        dir_second_ref = K_3ai @ proj_second_ref_pt.T
+        second_ref_scale = -a1 / (n1@dir_second_ref)
+        second_ref_3d = second_ref_scale * dir_second_ref
+        # print(dir_second_ref  , second_ref_3d)
+
+        #planes4,5
+        a4 = -n4@second_ref_3d
+        a5 = -n5@second_ref_3d
+        #Plane calculation end
+
+        print("Calculating 3D points")
+
+        denom1 = n1@d1
+        scale1 = -a1 / denom1
+        pts1_3d = scale1 * d1
+
+        denom2 = n2@d2
+        scale2 = -a2 / denom2
+        pts2_3d = scale2 * d2
+
+        denom3 = n3@d3
+        scale3 = -a3 / denom3
+        pts3_3d = scale3 * d3
+
+        denom4 = n4@d4
+        scale4 = -a4 / denom4
+        pts4_3d = scale4 * d4
+
+        denom5 = n5@d5
+        scale5 = -a5 / denom5
+        pts5_3d = scale5 * d5
+        print("Calculating 3D points end")
+        print("Plotting point cloud")
+        
+        subsampling = 5
+        pts1_3d_sub = pts1_3d[: , ::subsampling]
+        pts2_3d_sub = pts2_3d[: , ::subsampling]
+        pts3_3d_sub = pts3_3d[: , ::subsampling]
+        pts4_3d_sub = pts4_3d[: , ::subsampling]
+        pts5_3d_sub = pts5_3d[: , ::subsampling]
+
+        pts1_2d_sub = pts_p1[: , ::subsampling]
+        pts2_2d_sub = pts_p2[: , ::subsampling]
+        pts3_2d_sub = pts_p3[: , ::subsampling]
+        pts4_2d_sub = pts_p4[: , ::subsampling]
+        pts5_2d_sub = pts_p5[: , ::subsampling]
+
+
+        pts3d_final = np.hstack((pts1_3d_sub , pts2_3d_sub , pts3_3d_sub , pts4_3d_sub , pts5_3d_sub))
+        pts2d_final = np.hstack((pts1_2d_sub , pts2_2d_sub , pts3_2d_sub , pts4_2d_sub , pts5_2d_sub))
+
+        print(pts3d_final.shape , pts2d_final.shape)
+        color_list = []
+
+        for i in range(pts2d_final.shape[1]):
+            color_list.append(((building_img[pts2d_final[1,i] , pts2d_final[0,i] ])/255).tolist())
+        print(len(color_list))
+
+        fig = plt.figure()
+        ax=fig.add_subplot(projection='3d')
+        ax.scatter3D(pts3d_final[0,:] , pts3d_final[1,:] , pts3d_final[2,:] ,color=color_list)
+        plt.show()
+    
