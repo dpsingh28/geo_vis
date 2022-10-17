@@ -18,7 +18,7 @@ def get_cam_matrix(im_pts, world_pts):
         A[2*i+1 , 8:12] = -x*world_pts[i]
 
 
-    u,s,vh = np.linalg.svd(A)
+    _,_,vh = np.linalg.svd(A)
     P = np.reshape(vh[-1,:] , (3,4))
     # P = P / P[-1,-1]
     return P
@@ -33,8 +33,7 @@ def get_K3(vanish_pts):
     A = np.vstack(( A , np.array([[v2[0]*v3[0]+v2[1]*v3[1] , v2[0]*v3[2] + v2[2]*v3[0] , v2[1]*v3[2] + v2[2]*v3[1] , v2[2]*v3[2] ]]) ))
     A = np.vstack(( A , np.array([[v3[0]*v1[0]+v3[1]*v1[1] , v3[0]*v1[2] + v3[2]*v1[0] , v3[1]*v1[2] + v3[2]*v1[1] , v3[2]*v1[2] ]]) ))
 
-    u,s,vh = np.linalg.svd(A)
-    print(u , '\n',s,'\n' ,vh)
+    _,_,vh = np.linalg.svd(A)
     w_params = vh[-1,:]
     w_params = w_params / w_params[-1]
     w_params = w_params[0:3]
@@ -74,7 +73,6 @@ def get_K5(H1 , H2, H3):
         Y = H[:,1]
         x1,x2,x3 =X
         y1,y2,y3 =Y
-        # print(np.squeeze(np.hstack((np.reshape(X[0]*Y , (1,-1)) , np.reshape( X[1]*Y[1:] , (1,-1)) , np.array([[X[2]*Y[2]]]))) ))
         As = np.vstack(( As , np.array([[x1*y1, x1*y2+x2*y1, x1*y3+x3*y1, x2*y2, x2*y3+x3*y2, x3*y3]])))
         As = np.vstack(( As , np.array([[x1*x1, x1*x2+x2*x1, x1*x3+x3*x1, x2*x2, x2*x3+x3*x2, x3*x3]])
                              -np.array([[y1*y1, y1*y2+y2*y1, y1*y3+y3*y1, y2*y2, y2*y3+y3*y2, y3*y3]])))
