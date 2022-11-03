@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 import math
 import time
-from turtle import color
 import numpy as np
-import open3d as o3d
 import cv2
 import argparse
 from solvers import get_cam_matrix, get_K3,  get_H, get_K5
@@ -22,12 +20,12 @@ def project_and_normalize_pts(pts):
     # print("Outgoing points:,\n",pts_new)
     return pts_new
 
-def draw_2dline(pt_set1 , pt_set2 , image):
+def draw_2dline(pt_set1 , pt_set2 , image , cam_matrix):
     new_img = image.copy()
     pt_set1 = project_and_normalize_pts(pt_set1)
     pt_set2 = project_and_normalize_pts(pt_set2)
-    img_pt_set1 = (P@pt_set1.T).T
-    img_pt_set2 = (P@pt_set2.T).T
+    img_pt_set1 = (cam_matrix@pt_set1.T).T
+    img_pt_set2 = (cam_matrix@pt_set2.T).T
     img_pt_set1 = img_pt_set1/np.reshape(img_pt_set1[:,-1] , (-1,1))
     img_pt_set2 = img_pt_set2/np.reshape(img_pt_set2[:,-1] , (-1,1))
     img_pt_set1 = np.array(img_pt_set1[:,0:2] , dtype=int)
@@ -83,7 +81,7 @@ def make_lines(img, points):
         lines = np.append(lines , get_projective_line(p1,p2) ,axis =0)
 
     show_img("Line" , line_img)
-    # cv2.imwrite('processed_images/annotations/' + out_name + '.jpg' , line_img)
+    # cv2.imwrite('./submissions/rectangle_lines.jpg' , line_img)
     return lines
 
 def get_angle(n1 , n2):
@@ -144,7 +142,7 @@ if __name__== '__main__':
         pts2 = project_and_normalize_pts(pts2)
         pts3 = project_and_normalize_pts(pts3)
         P = get_cam_matrix(pts2 , pts3)
-        print("\033[1;33mCamera Matrix:\n" , P, "\033[1;0m")
+        print("\033[1;33mCamera Matrix:\n" , P/P[-1,-1], "\033[1;0m")
 
         surface_pts = np.load('./data/q1/bunny_pts.npy')
         surface_pts = project_and_normalize_pts(surface_pts)
@@ -166,7 +164,7 @@ if __name__== '__main__':
         lines = np.load('./data/q1/bunny_bd.npy')
         pt_set1 = lines[:,0:3]
         pt_set2 = lines[:,3:6]
-        line_img = draw_2dline(pt_set1 , pt_set2 , new_bunny)
+        line_img = draw_2dline(pt_set1 , pt_set2 , new_bunny , P)
         save_path = './submissions/bunny_bbox.jpg'
         show_img("Cuboid" , line_img)
         cv2.imwrite( save_path , line_img)
@@ -186,7 +184,7 @@ if __name__== '__main__':
         pts_3d = project_and_normalize_pts(pts_3d_orig)
         pts_2d = project_and_normalize_pts(pts_2d)
         P = get_cam_matrix(pts_2d , pts_3d)
-        print("\033[1;33mCamera Matrix:\n" , P, "\033[1;0m")
+        print("\033[1;33mCamera Matrix:\n" , P/P[-1,-1], "\033[1;0m")
 
         pt_set_3d_1 = pts_3d_orig[0:3,:]
         pt_set_3d_2 = pts_3d_orig[3:6,:]
@@ -195,7 +193,7 @@ if __name__== '__main__':
         pt_set_3d_2 = np.vstack((pt_set_3d_2 , np.delete(pts_3d_orig ,(0,2,3,5) , 0)))
         pt_set_3d_2 = np.vstack((pt_set_3d_2 , np.delete(pts_3d_orig ,(0,1,3,4) , 0)))
 
-        line_img = draw_2dline(pt_set_3d_1 , pt_set_3d_2 , cuboid)
+        line_img = draw_2dline(pt_set_3d_1 , pt_set_3d_2 , cuboid , P)
         print("Drawing lines on 2 front faces of the cuboid")
         show_img('Cuboid' , line_img)
         save_path = './submissions/cuboid_lines.jpg'

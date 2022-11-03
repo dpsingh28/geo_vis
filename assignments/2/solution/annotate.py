@@ -25,4 +25,5 @@ def annotate(img):
     cv2.imshow("Annotated Points" , pt_img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+    cv2.imwrite('./submissions/cuboid_annotation.jpg' , pt_img)
     return points
