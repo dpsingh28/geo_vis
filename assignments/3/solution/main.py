@@ -3,7 +3,7 @@ import cv2
 import argparse
 import math
 import annotate
-from solvers import eight_pt
+from solvers import eight_pt, seven_pt
 
 # np.random.seed(5)
 
@@ -40,16 +40,16 @@ def getF(object):
 
     return (T2.T @ eight_pt(pts1 , pts2) @ T1)
 
-def q1a1_epiline(object , F_object):
-    object1 = cv2.imread('../assignment3/data/q1a/'+object+'/image_1.jpg')
-    object2 = cv2.imread('../assignment3/data/q1a/'+object+'/image_2.jpg')
+def epilines(object1, object2 , F_object):
     object1_pt = annotate.annotate(object1)
     object1_pt = project_pts(object1_pt)
-    object2_line = np.squeeze(F_object @ np.reshape(object1_pt , (-1,1)))
-    x0, y0 = map(int, [0, -object2_line[2] / object2_line[1] ])
-    x1, y1 = map(int, 
-                    [object2.shape[1], -(object2_line[2] + object2_line[0] * object2.shape[1]) / object2_line[1] ])
-    line_img = cv2.line(object2.copy() , (x0 , y0) , (x1 , y1) , (255,0,0) , 5)
+    object2_line = (F_object @ object1_pt.T).T
+    line_img = object2.copy()
+    for line in object2_line:
+        x0, y0 = map(int, [0, -line[2] / line[1] ])
+        x1, y1 = map(int, 
+                        [object2.shape[1], -(line[2] + line[0] * object2.shape[1]) / line[1] ])
+        line_img = cv2.line(line_img , (x0 , y0) , (x1 , y1) , (255,0,0) , 2)
     show_img('epipolar line' , line_img)
 
 
@@ -65,10 +65,16 @@ if __name__ == '__main__':
         print("Fundamental matrix for chair:\n",F_chair)
         np.save('./new_data/F_teddy.npy' , F_teddy)
         np.save('./new_data/F_chair.npy' , F_chair)
-        q1a1_epiline('chair' , F_chair)
-        q1a1_epiline('teddy' , F_teddy)
+        object = 'chair'
+        object1 = cv2.imread('../assignment3/data/q1a/'+object+'/image_1.jpg')
+        object2 = cv2.imread('../assignment3/data/q1a/'+object+'/image_2.jpg')
+        epilines(object1 , object2 , F_chair)
+        object = 'teddy'
+        object1 = cv2.imread('../assignment3/data/q1a/'+object+'/image_1.jpg')
+        object2 = cv2.imread('../assignment3/data/q1a/'+object+'/image_2.jpg')
+        epilines(object1 , object2 , F_teddy)
     
-    if(args.type == '1A2'):
+    elif(args.type == '1A2'):
         F_teddy = np.load('./new_data/F_teddy.npy')
         F_chair = np.load('./new_data/F_chair.npy')
         teddy_intrinsics = np.load('../assignment3/data/q1a/teddy/intrinsic_matrices_teddy.npz')
@@ -77,9 +83,36 @@ if __name__ == '__main__':
         teddy_K2 = teddy_intrinsics['K2']
         chair_K1 = chair_intrinsics['K1']
         chair_K2 = chair_intrinsics['K2']
-
         E_teddy = teddy_K2.T @ F_teddy @ teddy_K1
         E_chair = chair_K2.T @ F_chair @ chair_K1
-
         print("Essential matrix for teddy\n",E_teddy)
         print("Essential matrix for chair\n",E_chair)
+
+    elif(args.type == '1B'):
+        toybus_correspondences = np.load('../assignment3/data/q1b/toybus/toybus_7_point_corresp.npz')
+        toytrain_correspondences = np.load('../assignment3/data/q1b/toytrain/toytrain_7_point_corresp.npz')
+        
+        toybus_pts1 = toybus_correspondences['pts1']
+        toybus_pts2 = toybus_correspondences['pts2']
+        toytrain_pts1 = toytrain_correspondences['pts1']
+        toytrain_pts2 = toytrain_correspondences['pts2']
+
+        T1_toybus = normalize_pts(toybus_pts1)
+        T2_toybus = normalize_pts(toybus_pts2)
+        toybus_pts1 = (T1_toybus @ project_pts(toybus_pts1).T).T
+        toybus_pts2 = (T2_toybus @ project_pts(toybus_pts2).T).T
+        F_toybus = seven_pt(toybus_pts1 , toybus_pts2)
+        F_toybus = T2_toybus.T @ F_toybus @ T1_toybus
+        toybus_im1 = cv2.imread("../assignment3/data/q1b/toybus/image_1.jpg")
+        toybus_im2 = cv2.imread("../assignment3/data/q1b/toybus/image_2.jpg")
+        epilines(toybus_im1 , toybus_im2 , F_toybus)
+
+        T1_toytrain = normalize_pts(toytrain_pts1)
+        T2_toytrain = normalize_pts(toytrain_pts2)
+        toytrain_pts1 = (T1_toytrain @ project_pts(toytrain_pts1).T).T
+        toytrain_pts2 = (T2_toytrain @ project_pts(toytrain_pts2).T).T
+        F_toytrain = seven_pt(toytrain_pts1 , toytrain_pts2)
+        F_toytrain = T2_toytrain.T @ F_toytrain @ T1_toytrain
+        toytrain_im1 = cv2.imread("../assignment3/data/q1b/toytrain/image_1.jpg")
+        toytrain_im2 = cv2.imread("../assignment3/data/q1b/toytrain/image_2.jpg")
+        epilines(toytrain_im1 , toytrain_im2 , F_toytrain)
