@@ -28,15 +28,11 @@ def normalize_pts(pts):
     T_mat = np.array([[sv , 0 , -sv*x0] , [0 , sv , -sv*y0] , [0 , 0 , 1]])
     return T_mat
 
-def q1a1(object):
+def getF(object):
     correspondences = np.load('../assignment3/data/q1a/'+object+'/'+ object +'_corresp_raw.npz')
     pts1 = correspondences['pts1']
     pts2 = correspondences['pts2']
     assert pts1.shape == pts2.shape , "Issue in original data"
-    # idx = np.random.randint(low=0 , high=pts1.shape[0] , size=8, dtype=int)
-    # idx = [0,1,2,3,4,5,6,7]
-    # pts1 = pts1[idx , :]
-    # pts2 = pts2[idx , :]
     T1 = normalize_pts(pts1)
     T2 = normalize_pts(pts2)
     pts1 = (T1 @ project_pts(pts1).T).T
@@ -63,17 +59,27 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if(args.type == '1A1'):
-        F_teddy = q1a1('teddy')
-        F_chair = q1a1('chair')
-        print(F_teddy)
-        print(F_chair)
+        F_teddy = getF('teddy')
+        F_chair = getF('chair')
+        print("Fundamental matrix for teddy:\n",F_teddy)
+        print("Fundamental matrix for chair:\n",F_chair)
+        np.save('./new_data/F_teddy.npy' , F_teddy)
+        np.save('./new_data/F_chair.npy' , F_chair)
         q1a1_epiline('chair' , F_chair)
         q1a1_epiline('teddy' , F_teddy)
+    
+    if(args.type == '1A2'):
+        F_teddy = np.load('./new_data/F_teddy.npy')
+        F_chair = np.load('./new_data/F_chair.npy')
+        teddy_intrinsics = np.load('../assignment3/data/q1a/teddy/intrinsic_matrices_teddy.npz')
+        chair_intrinsics = np.load('../assignment3/data/q1a/chair/intrinsic_matrices_chair.npz')
+        teddy_K1 = teddy_intrinsics['K1']
+        teddy_K2 = teddy_intrinsics['K2']
+        chair_K1 = chair_intrinsics['K1']
+        chair_K2 = chair_intrinsics['K2']
 
+        E_teddy = teddy_K2.T @ F_teddy @ teddy_K1
+        E_chair = chair_K2.T @ F_chair @ chair_K1
 
-
-
-
-        # for item in arr:
-        #     item = np.array(item , dtype=int)
-        #     cv2.drawMarker(chair2, (item[0], item[1]),(0,0,255), markerType=cv2.MARKER_DIAMOND, markerSize=-2, thickness=2, line_type=cv2.LINE_AA)
+        print("Essential matrix for teddy\n",E_teddy)
+        print("Essential matrix for chair\n",E_chair)
