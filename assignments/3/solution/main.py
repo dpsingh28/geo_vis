@@ -5,6 +5,8 @@ import math
 import annotate
 from solvers import eight_pt
 
+# np.random.seed(5)
+
 def show_img(window_name , image):
     cv2.imshow(window_name , image)
     cv2.waitKey(0)
@@ -31,9 +33,10 @@ def q1a1(object):
     pts1 = correspondences['pts1']
     pts2 = correspondences['pts2']
     assert pts1.shape == pts2.shape , "Issue in original data"
-    idx = np.random.randint(low=0 , high=pts1.shape[0] , size=8, dtype=int)
-    pts1 = pts1[idx , :]
-    pts2 = pts2[idx , :]
+    # idx = np.random.randint(low=0 , high=pts1.shape[0] , size=8, dtype=int)
+    # idx = [0,1,2,3,4,5,6,7]
+    # pts1 = pts1[idx , :]
+    # pts2 = pts2[idx , :]
     T1 = normalize_pts(pts1)
     T2 = normalize_pts(pts2)
     pts1 = (T1 @ project_pts(pts1).T).T
@@ -41,6 +44,17 @@ def q1a1(object):
 
     return (T2.T @ eight_pt(pts1 , pts2) @ T1)
 
+def q1a1_epiline(object , F_object):
+    object1 = cv2.imread('../assignment3/data/q1a/'+object+'/image_1.jpg')
+    object2 = cv2.imread('../assignment3/data/q1a/'+object+'/image_2.jpg')
+    object1_pt = annotate.annotate(object1)
+    object1_pt = project_pts(object1_pt)
+    object2_line = np.squeeze(F_object @ np.reshape(object1_pt , (-1,1)))
+    x0, y0 = map(int, [0, -object2_line[2] / object2_line[1] ])
+    x1, y1 = map(int, 
+                    [object2.shape[1], -(object2_line[2] + object2_line[0] * object2.shape[1]) / object2_line[1] ])
+    line_img = cv2.line(object2.copy() , (x0 , y0) , (x1 , y1) , (255,0,0) , 5)
+    show_img('epipolar line' , line_img)
 
 
 if __name__ == '__main__':
@@ -53,17 +67,8 @@ if __name__ == '__main__':
         F_chair = q1a1('chair')
         print(F_teddy)
         print(F_chair)
-        teddy1 = cv2.imread('../assignment3/data/q1a/teddy/image_1.jpg')
-        teddy2 = cv2.imread('../assignment3/data/q1a/teddy/image_2.jpg')
-        teddy1_pt = annotate.annotate(teddy1)
-        teddy1_pt = project_pts(teddy1_pt)
-        teddy2_line = np.squeeze(F_teddy @ np.reshape(teddy1_pt , (-1,1)))
-        print(teddy2_line/teddy2_line[-1])
-        x0, y0 = map(int, [0, -teddy2_line[2] / teddy2_line[1] ])
-        x1, y1 = map(int, 
-                     [teddy1.shape[1], -(teddy2_line[2] + teddy2_line[0] * teddy1.shape[1]) / teddy2_line[1] ])
-        line_img = cv2.line(teddy2.copy() , (x0 , y0) , (x1 , y1) , (255,0,0) , 5)
-        show_img('epipolar line' , line_img)
+        q1a1_epiline('chair' , F_chair)
+        q1a1_epiline('teddy' , F_teddy)
 
 
 
