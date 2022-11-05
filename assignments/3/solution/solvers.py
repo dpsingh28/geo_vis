@@ -3,7 +3,6 @@ import numpy as np
 def eight_pt(pts1 , pts2):
     assert pts1.shape == pts2.shape , "Shape of point set 1 != Shape of point set 2"
     assert pts1.shape[1] == 3 , "Points needed in projective space for eight point algorihtm"
-    print("Number of points: ", pts1.shape[0])
 
     A_mat = np.reshape(np.array([] , dtype=float) , (0,9))
     for i in range(pts1.shape[0]):
@@ -52,27 +51,4 @@ def seven_pt(pts1 , pts2):
     coeffs[3] = dets[7]
 
     roots = np.roots(coeffs)
-    real_part_roots = roots.real
-    imag_part_roots = roots.imag
-    num_real = np.bincount(roots.imag == 0)[-1]
-
-    if(num_real == 1):
-        idx = np.where(imag_part_roots == 0)
-        print("index is: ", idx)
-    elif(num_real==3):
-        F0 = real_part_roots[0] * F_coeff + F_const
-        F1 = real_part_roots[1] * F_coeff + F_const
-        F2 = real_part_roots[2] * F_coeff + F_const
-        mag = np.zeros(3)
-        mag[0] = np.abs(np.trace(pts2 @ F0 @ pts1.T))
-        mag[1] = np.abs(np.trace(pts2 @ F1 @ pts1.T))
-        mag[2] = np.abs(np.trace(pts2 @ F2 @ pts1.T))
-        idx = np.argmin(mag)
-        print("index is: ", idx)
-    else:
-        raise RuntimeError("Logical Erro number of real roots can be only 1 or 3")
-
-    F_mat = real_part_roots[idx]*F_coeff + F_const
-    F_mat = F_mat/F_mat[-1,-1]
-    print(F_mat)
-    return F_mat
+    return roots , F_coeff , F_const
