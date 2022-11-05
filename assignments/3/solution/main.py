@@ -5,6 +5,7 @@ import math
 import time
 import annotate
 from matplotlib import pyplot as plt
+from scipy.optimize import least_squares
 from solvers import eight_pt, seven_pt , triangulate
 
 # np.random.seed(5)
@@ -183,6 +184,37 @@ def F_from_7p_roots(roots, F_coeff , F_const , pts1 , pts2):
     F_mat = F_mat/F_mat[-1,-1]
     return F_mat
 
+def triangulation(im1 , im2 , cam1 ,cam2 , pts1 , pts2):
+    proj_pts1 = project_pts(pts1)
+    proj_pts2 = project_pts(pts2)
+    img_3d_pts = np.reshape(np.array([]) , (0,4))
+    
+    start_time = time.time()
+    for p1,p2 in zip(proj_pts1 , proj_pts2):
+        img_3d_pts = np.vstack((img_3d_pts , triangulate(p1 , p2 , cam1 , cam2)))
+
+    print("Time taken by loop= ",time.time() - start_time," sec")
+    img_3d_pts = img_3d_pts / np.reshape(img_3d_pts[:,-1] , (-1,1))
+    img_3d_pts = img_3d_pts[:,0:3]
+
+    img_3d_color = []
+    for i in range(pts1.shape[0]):
+        img_3d_color.append( ((im1[pts1[i,1] , pts1[i,0] , :]) /255).tolist())
+    img_3d_color = np.array(img_3d_color)
+    img_3d_color[:, [0,2]] = img_3d_color[:, [2,0]]
+
+    fig = plt.figure()
+    ax=fig.add_subplot(projection='3d')
+    ax.set_xlim(-0.8 , 0.8)
+    ax.set_ylim(-0.8 , 0.8)
+    ax.set_zlim(-0.8 , 0.8)
+    ax.w_xaxis.set_pane_color((0, 1, 0, 0.5))
+    ax.w_yaxis.set_pane_color((0, 1, 0, 0.5))
+    ax.w_zaxis.set_pane_color((0, 1, 0, 0.5))
+    ax.scatter3D(img_3d_pts[:,0] , img_3d_pts[:,1] , img_3d_pts[:,2] , s=10 ,color=img_3d_color)
+    plt.show()
+    return img_3d_pts
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description= "Main file for HW3 of 16822")
@@ -276,31 +308,47 @@ if __name__ == '__main__':
         cow_cam2 = np.load('../assignment3/data/q3/P2.npy')
         cow_pts1 = np.load('../assignment3/data/q3/pts1.npy')
         cow_pts2 = np.load('../assignment3/data/q3/pts2.npy')
-        cow_proj_pts1 = project_pts(cow_pts1)
-        cow_proj_pts2 = project_pts(cow_pts2)
-        cow_3d_pts = np.reshape(np.array([]) , (0,4))
+        _ = triangulation(cow1 , cow2 , cow_cam1 ,cow_cam2 , cow_pts1 , cow_pts2)
+
+    elif(args.type == '4'):
+        cow1 = cv2.imread('../assignment3/data/q4/img1.jpg')
+        cow2 = cv2.imread('../assignment3/data/q4/img2.jpg')
+        cow_cam1 = np.load('../assignment3/data/q4/P1_noisy.npy')
+        cow_cam2 = np.load('../assignment3/data/q4/P2_noisy.npy')
+        cow_pts1 = np.load('../assignment3/data/q4/pts1.npy')
+        cow_pts2 = np.load('../assignment3/data/q4/pts2.npy')
         
+        proj_pts1 = project_pts(cow_pts1)
+        proj_pts2 = project_pts(cow_pts2)
+        
+        def residual_func(params):
+            P1 = params[:12].reshape(3,4)
+            P2 = params[12:24].reshape(3,4)
+            X3d = params[24:].reshape(-1,3)
+            X3d_proj = project_pts(X3d)
+            x1_hat = (P1 @ X3d_proj.T).T
+            x2_hat = (P2 @ X3d_proj.T).T
+            residual  = np.square((proj_pts1[:,0]/proj_pts1[:,2]) - (x1_hat[:,0]/x1_hat[:,2])) 
+            residual += np.square((proj_pts1[:,1]/proj_pts1[:,2]) - (x1_hat[:,1]/x1_hat[:,2])) 
+            residual += np.square((proj_pts2[:,0]/proj_pts2[:,2]) - (x2_hat[:,0]/x2_hat[:,2])) 
+            residual += np.square((proj_pts2[:,1]/proj_pts2[:,2]) - (x2_hat[:,1]/x2_hat[:,2]))
+            return residual
+
+        pts3d_init = triangulation(cow1 , cow2 , cow_cam1 ,cow_cam2 , cow_pts1 , cow_pts2)
+        params_init = np.zeros(((2*12)+(3*cow_pts1.shape[0])))
+        params_init[:12] = cow_cam1.flatten()
+        params_init[12:24] =  cow_cam2.flatten()
+        params_init[24:] = pts3d_init.flatten()
         start_time = time.time()
-        for p1,p2 in zip(cow_proj_pts1 , cow_proj_pts2):
-            cow_3d_pts = np.vstack((cow_3d_pts , triangulate(p1 , p2 , cow_cam1 , cow_cam2)))
+        res = least_squares(residual_func , params_init , verbose=2, method='dogbox')
+        print("TIme taken for optimization: ", time.time() - start_time,' sec')
 
-        print("Time taken by loop= ",time.time() - start_time," sec")
-        cow_3d_pts = cow_3d_pts / np.reshape(cow_3d_pts[:,-1] , (-1,1))
-        cow_3d_pts = cow_3d_pts[:,0:3]
+        final_params = res.x
+        P1_final = final_params[:12].reshape(3,4)
+        P2_final = final_params[12:24].reshape(3,4)
+        X3d_final = final_params[24:].reshape(-1,3)
 
-        cow_3d_color = []
-        for i in range(cow_pts1.shape[0]):
-            cow_3d_color.append( ((cow1[cow_pts1[i,1] , cow_pts1[i,0] , :]) /255).tolist())
-        cow_3d_color = np.array(cow_3d_color)
-        cow_3d_color[:, [0,2]] = cow_3d_color[:, [2,0]]
-
-        fig = plt.figure()
-        ax=fig.add_subplot(projection='3d')
-        ax.set_xlim(-0.8 , 0.8)
-        ax.set_ylim(-0.8 , 0.8)
-        ax.set_zlim(-0.8 , 0.8)
-        ax.w_xaxis.set_pane_color((0, 1, 0, 0.5))
-        ax.w_yaxis.set_pane_color((0, 1, 0, 0.5))
-        ax.w_zaxis.set_pane_color((0, 1, 0, 0.5))
-        ax.scatter3D(cow_3d_pts[:,0] , cow_3d_pts[:,1] , cow_3d_pts[:,2] , s=5 ,color=cow_3d_color)
-        plt.show()
+        print("P1_final:\n", P1_final)
+        print("P2_final:\n", P2_final)
+        # print(X3d_final.shape)
+        _ = triangulation(cow1 , cow2 , P1_final ,P2_final , cow_pts1 , cow_pts2)
