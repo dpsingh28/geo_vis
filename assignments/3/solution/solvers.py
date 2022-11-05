@@ -52,3 +52,19 @@ def seven_pt(pts1 , pts2):
 
     roots = np.roots(coeffs)
     return roots , F_coeff , F_const
+
+def triangulate(p1 , p2 , cam1 , cam2):
+    px1 = np.array([[0 , -p1[2] , p1[1]],
+                    [p1[2] , 0 , -p1[0]],
+                    [-p1[1] , p1[0] , 0]])
+    px2 = np.array([[0 , -p2[2] , p2[1]],
+                    [p2[2] , 0 , -p2[0]],
+                    [-p2[1] , p2[0] , 0]])
+    A1 = px1@cam1
+    A2 = px2@cam2
+    A_mat = np.zeros((4,4))
+    A_mat[0:2,:] = A1[0:2,:]
+    A_mat[2:4,:] = A2[0:2,:]
+    _,_,vt = np.linalg.svd(A_mat)
+    X_vec = np.reshape(vt[-1,:] , (1,-1))
+    return X_vec

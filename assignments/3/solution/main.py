@@ -5,7 +5,7 @@ import math
 import time
 import annotate
 from matplotlib import pyplot as plt
-from solvers import eight_pt, seven_pt
+from solvers import eight_pt, seven_pt , triangulate
 
 # np.random.seed(5)
 
@@ -60,7 +60,7 @@ def F_ransac_roots():
 def ransac(object , points , error_thresh , num_iters):
     start_time = time.time()
     print("Object: ", object)
-    print('Algorithm: ', points, '-point') 
+    print('Algorithm: ', points, 'point') 
     print('Number of iterations: ',num_iters)
     print('Error Threshold: ',error_thresh)
     raw_correspondences = np.load('../assignment3/data/q1b/'+object+'/'+object+'_corresp_raw.npz')
@@ -132,6 +132,7 @@ def ransac(object , points , error_thresh , num_iters):
             else:
                 raise RuntimeError("[Ransac] Error: number of real roots can be only 1 or 3")
             F_int = F_seven
+
         if num_inliers > history_inliers:
             history_inliers = num_inliers
             best_pts1 = inlier_pts1
@@ -146,7 +147,7 @@ def ransac(object , points , error_thresh , num_iters):
     object1 = cv2.imread('../assignment3/data/q1b/'+object+'/image_1.jpg')
     object2 = cv2.imread('../assignment3/data/q1b/'+object+'/image_2.jpg')
 
-    # Using the best inliers for fundamental metrix calculation
+    # Using the best inliers for fundamental matrix calculation
     new_pt1 = best_pts1
     new_pt2 = best_pts2
     T1 = normalize_pts(new_pt1)
@@ -267,3 +268,39 @@ if __name__ == '__main__':
                 ransac('toybus' , 7 , 440 , 10000)
             else:
                 ransac('toytrain' , 7 , 200 , 10000)
+
+    elif(args.type == '3'):
+        cow1 = cv2.imread('../assignment3/data/q3/img1.jpg')
+        cow2 = cv2.imread('../assignment3/data/q3/img2.jpg')
+        cow_cam1 = np.load('../assignment3/data/q3/P1.npy')
+        cow_cam2 = np.load('../assignment3/data/q3/P2.npy')
+        cow_pts1 = np.load('../assignment3/data/q3/pts1.npy')
+        cow_pts2 = np.load('../assignment3/data/q3/pts2.npy')
+        cow_proj_pts1 = project_pts(cow_pts1)
+        cow_proj_pts2 = project_pts(cow_pts2)
+        cow_3d_pts = np.reshape(np.array([]) , (0,4))
+        
+        start_time = time.time()
+        for p1,p2 in zip(cow_proj_pts1 , cow_proj_pts2):
+            cow_3d_pts = np.vstack((cow_3d_pts , triangulate(p1 , p2 , cow_cam1 , cow_cam2)))
+
+        print("Time taken by loop= ",time.time() - start_time," sec")
+        cow_3d_pts = cow_3d_pts / np.reshape(cow_3d_pts[:,-1] , (-1,1))
+        cow_3d_pts = cow_3d_pts[:,0:3]
+
+        cow_3d_color = []
+        for i in range(cow_pts1.shape[0]):
+            cow_3d_color.append( ((cow1[cow_pts1[i,1] , cow_pts1[i,0] , :]) /255).tolist())
+        cow_3d_color = np.array(cow_3d_color)
+        cow_3d_color[:, [0,2]] = cow_3d_color[:, [2,0]]
+
+        fig = plt.figure()
+        ax=fig.add_subplot(projection='3d')
+        ax.set_xlim(-0.8 , 0.8)
+        ax.set_ylim(-0.8 , 0.8)
+        ax.set_zlim(-0.8 , 0.8)
+        ax.w_xaxis.set_pane_color((0, 1, 0, 0.5))
+        ax.w_yaxis.set_pane_color((0, 1, 0, 0.5))
+        ax.w_zaxis.set_pane_color((0, 1, 0, 0.5))
+        ax.scatter3D(cow_3d_pts[:,0] , cow_3d_pts[:,1] , cow_3d_pts[:,2] , s=5 ,color=cow_3d_color)
+        plt.show()
