@@ -2,7 +2,9 @@ import numpy as np
 import cv2
 import argparse
 import math
+import time
 import annotate
+from matplotlib import pyplot as plt
 from solvers import eight_pt, seven_pt
 
 # np.random.seed(5)
@@ -55,19 +57,24 @@ def F_ransac_roots():
     pass
 
 
-def ransac(object , points , error_thresh , n_iters):
-    print(points,'-point algorithm on ',object,'-----Number of iterations= ',n_iters)
+def ransac(object , points , error_thresh , num_iters):
+    start_time = time.time()
+    print("Object: ", object)
+    print('Algorithm: ', points, '-point') 
+    print('Number of iterations: ',num_iters)
+    print('Error Threshold: ',error_thresh)
     raw_correspondences = np.load('../assignment3/data/q1b/'+object+'/'+object+'_corresp_raw.npz')
     pts1 = raw_correspondences['pts1']
     pts2 = raw_correspondences['pts2']
+    corres_size = (pts1.copy()).shape[0]
     F_int = None
-    F_best = None
     F_eight = None
     F_seven = None
     history_inliers = 0
-    idx_best = None
-    for i in range(n_iters):
-        # print("Iteration: ",i)
+    best_pts1 = None
+    best_pts2 = None
+    inlier_stack = []
+    for i in range(num_iters):
         rand_idx = np.random.randint(0 , pts1.shape[0]-1 , points)
         rand_pts1 = pts1[rand_idx,:]
         rand_pts2 = pts2[rand_idx,:]
@@ -82,11 +89,21 @@ def ransac(object , points , error_thresh , n_iters):
         else:
             raise RuntimeError("points varible can only be 7 or 8")
         
+        idx = None
+        inlier_pts1 = None
+        inlier_pts2 = None
         def ransac_inliers(F_temp):
-            errors = project_pts(pts2) * (F_temp @ project_pts(pts1).T).T
+            nonlocal idx
+            nonlocal inlier_pts1
+            nonlocal inlier_pts2
+            new_pts2 = np.delete(pts2 , rand_idx , 0)
+            new_pts1 = np.delete(pts1 , rand_idx , 0)
+            errors = project_pts(new_pts2) * (F_temp @ project_pts(new_pts1).T).T
             errors = np.abs(np.sum(errors , axis=1))
             check = errors < error_thresh
             idx = (np.where(check == True)[0])
+            inlier_pts1 = new_pts1[idx , :]
+            inlier_pts2 = new_pts2[idx , :]
             n_inliers = idx.shape[0]
             return n_inliers
         
@@ -98,8 +115,8 @@ def ransac(object , points , error_thresh , n_iters):
             imag_part_roots = roots.imag
             num_real = np.bincount(roots.imag == 0)[-1]
             if(num_real == 1):
-                idx = np.where(imag_part_roots == 0)[0]
-                F_seven = real_part_roots[idx]*F_coeff + F_const
+                idx_sp = np.where(imag_part_roots == 0)[0]
+                F_seven = real_part_roots[idx_sp]*F_coeff + F_const
                 num_inliers = ransac_inliers(F_seven)
             elif(num_real==3):
                 Fs = np.zeros((3,3,3))
@@ -115,37 +132,40 @@ def ransac(object , points , error_thresh , n_iters):
             else:
                 raise RuntimeError("[Ransac] Error: number of real roots can be only 1 or 3")
             F_int = F_seven
-
         if num_inliers > history_inliers:
             history_inliers = num_inliers
-            F_best = F_int
-            # idx_best = idx
+            best_pts1 = inlier_pts1
+            best_pts2 = inlier_pts2
+        inlier_stack.append(history_inliers/corres_size)
+    
     
     print("Ratio of inliers: ",history_inliers/pts1.shape[0])
-    F_best = F_best / F_best[-1,-1]
-    print("F_ransac:" , F_best)
+    print("Time Taken: ",time.time() - start_time," sec\n")
+    plt.plot(inlier_stack)
+    plt.show()
     object1 = cv2.imread('../assignment3/data/q1b/'+object+'/image_1.jpg')
     object2 = cv2.imread('../assignment3/data/q1b/'+object+'/image_2.jpg')
-    epilines(object1 , object2 , F_best)
 
-    # new_pt1 = pts1[idx_best , :]
-    # new_pt2 = pts2[idx_best , :]
-    # T1 = normalize_pts(new_pt1)
-    # T2 = normalize_pts(new_pt2)
-    # new_pt1 = (T1 @ project_pts(new_pt1).T).T
-    # new_pt2 = (T2 @ project_pts(new_pt2).T).T
-    # F_new = T2.T @ eight_pt(new_pt1 , new_pt2) @ T1
-    # F_new = F_new / F_new[-1,-1]
-    # print("F_New\n:", F_new)
+    # Using the best inliers for fundamental metrix calculation
+    new_pt1 = best_pts1
+    new_pt2 = best_pts2
+    T1 = normalize_pts(new_pt1)
+    T2 = normalize_pts(new_pt2)
+    new_pt1 = (T1 @ project_pts(new_pt1).T).T
+    new_pt2 = (T2 @ project_pts(new_pt2).T).T
+    F_new = T2.T @ eight_pt(new_pt1 , new_pt2) @ T1
+    F_new = F_new / F_new[-1,-1]
+    print("F_best\n:", F_new)
+    epilines(object1 , object2 , F_new)
 
-def F_from_roots(roots, F_coeff , F_const , pts1 , pts2):
+
+def F_from_7p_roots(roots, F_coeff , F_const , pts1 , pts2):
     real_part_roots = roots.real
     imag_part_roots = roots.imag
     num_real = np.bincount(roots.imag == 0)[-1]
 
     if(num_real == 1):
         idx = np.where(imag_part_roots == 0)
-        # print("index is: ", idx)
     elif(num_real==3):
         F0 = real_part_roots[0] * F_coeff + F_const
         F1 = real_part_roots[1] * F_coeff + F_const
@@ -155,7 +175,6 @@ def F_from_roots(roots, F_coeff , F_const , pts1 , pts2):
         mag[1] = np.abs(np.trace(pts2 @ F1 @ pts1.T))
         mag[2] = np.abs(np.trace(pts2 @ F2 @ pts1.T))
         idx = np.argmin(mag)
-        # print("index is: ", idx)
     else:
         raise RuntimeError("Error: number of real roots can be only 1 or 3")
 
@@ -167,6 +186,8 @@ def F_from_roots(roots, F_coeff , F_const , pts1 , pts2):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description= "Main file for HW3 of 16822")
     parser.add_argument('--type' , required=True, choices=['1A1' , '1A2' , '1B' , '2' , '3' , '4' , '5'])
+    parser.add_argument('--ransac_object' , choices=['toybus' , 'toytrain'])
+    parser.add_argument('--ransac_algorithm' , choices=['7' ,'8'])
     args = parser.parse_args()
 
     if(args.type == '1A1'):
@@ -213,7 +234,7 @@ if __name__ == '__main__':
         toybus_pts1 = (T1_toybus @ project_pts(toybus_pts1).T).T
         toybus_pts2 = (T2_toybus @ project_pts(toybus_pts2).T).T
         roots_toybus , F1_toybus , F2_toybus = seven_pt(toybus_pts1 , toybus_pts2)
-        F_toybus = F_from_roots(roots_toybus , F1_toybus , F2_toybus , toybus_pts1 , toybus_pts2)
+        F_toybus = F_from_7p_roots(roots_toybus , F1_toybus , F2_toybus , toybus_pts1 , toybus_pts2)
         F_toybus = T2_toybus.T @ F_toybus @ T1_toybus
         print("F_toybus:\n" , F_toybus)
         toybus_im1 = cv2.imread("../assignment3/data/q1b/toybus/image_1.jpg")
@@ -225,7 +246,7 @@ if __name__ == '__main__':
         toytrain_pts1 = (T1_toytrain @ project_pts(toytrain_pts1).T).T
         toytrain_pts2 = (T2_toytrain @ project_pts(toytrain_pts2).T).T
         roots_toytrain , F1_toytrain , F2_toytrain = seven_pt(toytrain_pts1 , toytrain_pts2)
-        F_toytrain = F_from_roots(roots_toytrain , F1_toytrain , F2_toytrain , toytrain_pts1 , toytrain_pts2)
+        F_toytrain = F_from_7p_roots(roots_toytrain , F1_toytrain , F2_toytrain , toytrain_pts1 , toytrain_pts2)
         F_toytrain = T2_toytrain.T @ F_toytrain @ T1_toytrain
         print("F_toytrain:\n", F_toytrain)
         toytrain_im1 = cv2.imread("../assignment3/data/q1b/toytrain/image_1.jpg")
@@ -233,14 +254,16 @@ if __name__ == '__main__':
         epilines(toytrain_im1 , toytrain_im2 , F_toytrain)
 
     elif(args.type == '2'):
-        # ransac('toybus' , 8 , 0.0065 , 10000)
-        # ransac('toytrain' , 8 , 0.008 , 10000)
-        ransac('toybus' , 7 , 500 , 5000)
+        if ((args.ransac_object == None) or (args.ransac_algorithm == None)):
+            raise RuntimeError("arguments ransac_object and ransac_algorithm needed for Q2. Please use python3 main.py -h for more info")
 
-
-        # for pts in pts1[idx_best, :]:
-        #     cv2.drawMarker(chair1 , (int(pts[0]) , int(pts[1])) , markerType=cv2.MARKER_DIAMOND, color=(0,0,255) , thickness=5 , markerSize=-5)
-        # for pts in pts2[idx_best, :]:
-        #     cv2.drawMarker(chair2 , (int(pts[0]) , int(pts[1])) , markerType=cv2.MARKER_DIAMOND, color=(0,0,255) , thickness=5 , markerSize=-5)
-        # cv2.imshow('im1' , chair1)
-        # show_img('im2' , chair2)
+        if(args.ransac_algorithm == '8'):
+            if(args.ransac_object == 'toybus'):
+                ransac('toybus' , 8 , 0.0065 , 10000)
+            else:
+                ransac('toytrain' , 8 , 0.008 , 10000)
+        else:
+            if(args.ransac_object == 'toybus'):
+                ransac('toybus' , 7 , 440 , 10000)
+            else:
+                ransac('toytrain' , 7 , 200 , 10000)
