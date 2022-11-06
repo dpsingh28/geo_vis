@@ -32,7 +32,7 @@ def normalize_pts(pts):
     return T_mat
 
 def getF(object):
-    correspondences = np.load('../assignment3/data/q1a/'+object+'/'+ object +'_corresp_raw.npz')
+    correspondences = np.load('./data/q1a/'+object+'/'+ object +'_corresp_raw.npz')
     pts1 = correspondences['pts1']
     pts2 = correspondences['pts2']
     assert pts1.shape == pts2.shape , "Issue in original data"
@@ -53,7 +53,7 @@ def epilines(object1, object2 , F_object):
         x1, y1 = map(int, [object2.shape[1], -(line[2] + line[0] * object2.shape[1]) / line[1] ])
         line_img = cv2.line(line_img , (x0 , y0) , (x1 , y1) , (255,0,0) , 2)
     show_img('epipolar line' , line_img)
-    cv2.imwrite('./submissions/chair_epilines_8p.jpg' , line_img)
+    cv2.imwrite('./submissions/car2_lines.jpg' , line_img)
 
 def ransac(pts1 , pts2 , object1, object2 , points , error_thresh , num_iters):
     start_time = time.time()
@@ -137,6 +137,8 @@ def ransac(pts1 , pts2 , object1, object2 , points , error_thresh , num_iters):
     print("Ratio of inliers: ",history_inliers/pts1.shape[0])
     print("Time Taken: ",time.time() - start_time," sec\n")
     plt.plot(inlier_stack)
+    plt.xlabel("Number of Iterations")
+    plt.ylabel("Ratio of Inliers")
     plt.show()
 
     # Using the best inliers for fundamental matrix calculation
@@ -212,6 +214,7 @@ if __name__ == '__main__':
     parser.add_argument('--type' , required=True, choices=['1A1' , '1A2' , '1B' , '2' , '3' , '4' , '5'])
     parser.add_argument('--ransac_object' , choices=['toybus' , 'toytrain'])
     parser.add_argument('--ransac_algorithm' , choices=['7' ,'8'])
+    parser.add_argument('--q5_object' , choices=['car1' , 'car2'])
     args = parser.parse_args()
 
     if(args.type == '1A1'):
@@ -222,19 +225,19 @@ if __name__ == '__main__':
         np.save('./new_data/F_teddy.npy' , F_teddy)
         np.save('./new_data/F_chair.npy' , F_chair)
         object = 'chair'
-        object1 = cv2.imread('../assignment3/data/q1a/'+object+'/image_1.jpg')
-        object2 = cv2.imread('../assignment3/data/q1a/'+object+'/image_2.jpg')
+        object1 = cv2.imread('./data/q1a/'+object+'/image_1.jpg')
+        object2 = cv2.imread('./data/q1a/'+object+'/image_2.jpg')
         epilines(object1 , object2 , F_chair)
         object = 'teddy'
-        object1 = cv2.imread('../assignment3/data/q1a/'+object+'/image_1.jpg')
-        object2 = cv2.imread('../assignment3/data/q1a/'+object+'/image_2.jpg')
+        object1 = cv2.imread('./data/q1a/'+object+'/image_1.jpg')
+        object2 = cv2.imread('./data/q1a/'+object+'/image_2.jpg')
         epilines(object1 , object2 , F_teddy)
     
     elif(args.type == '1A2'):
         F_teddy = np.load('./new_data/F_teddy.npy')
         F_chair = np.load('./new_data/F_chair.npy')
-        teddy_intrinsics = np.load('../assignment3/data/q1a/teddy/intrinsic_matrices_teddy.npz')
-        chair_intrinsics = np.load('../assignment3/data/q1a/chair/intrinsic_matrices_chair.npz')
+        teddy_intrinsics = np.load('./data/q1a/teddy/intrinsic_matrices_teddy.npz')
+        chair_intrinsics = np.load('./data/q1a/chair/intrinsic_matrices_chair.npz')
         teddy_K1 = teddy_intrinsics['K1']
         teddy_K2 = teddy_intrinsics['K2']
         chair_K1 = chair_intrinsics['K1']
@@ -245,8 +248,8 @@ if __name__ == '__main__':
         print("Essential matrix for chair\n",E_chair)
 
     elif(args.type == '1B'):
-        toybus_correspondences = np.load('../assignment3/data/q1b/toybus/toybus_7_point_corresp.npz')
-        toytrain_correspondences = np.load('../assignment3/data/q1b/toytrain/toytrain_7_point_corresp.npz')
+        toybus_correspondences = np.load('./data/q1b/toybus/toybus_7_point_corresp.npz')
+        toytrain_correspondences = np.load('./data/q1b/toytrain/toytrain_7_point_corresp.npz')
         
         toybus_pts1 = toybus_correspondences['pts1']
         toybus_pts2 = toybus_correspondences['pts2']
@@ -261,8 +264,8 @@ if __name__ == '__main__':
         F_toybus = F_from_7p_roots(roots_toybus , F1_toybus , F2_toybus , toybus_pts1 , toybus_pts2)
         F_toybus = T2_toybus.T @ F_toybus @ T1_toybus
         print("F_toybus:\n" , F_toybus)
-        toybus_im1 = cv2.imread("../assignment3/data/q1b/toybus/image_1.jpg")
-        toybus_im2 = cv2.imread("../assignment3/data/q1b/toybus/image_2.jpg")
+        toybus_im1 = cv2.imread("./data/q1b/toybus/image_1.jpg")
+        toybus_im2 = cv2.imread("./data/q1b/toybus/image_2.jpg")
         epilines(toybus_im1 , toybus_im2 , F_toybus)
 
         T1_toytrain = normalize_pts(toytrain_pts1)
@@ -273,8 +276,8 @@ if __name__ == '__main__':
         F_toytrain = F_from_7p_roots(roots_toytrain , F1_toytrain , F2_toytrain , toytrain_pts1 , toytrain_pts2)
         F_toytrain = T2_toytrain.T @ F_toytrain @ T1_toytrain
         print("F_toytrain:\n", F_toytrain)
-        toytrain_im1 = cv2.imread("../assignment3/data/q1b/toytrain/image_1.jpg")
-        toytrain_im2 = cv2.imread("../assignment3/data/q1b/toytrain/image_2.jpg")
+        toytrain_im1 = cv2.imread("./data/q1b/toytrain/image_1.jpg")
+        toytrain_im2 = cv2.imread("./data/q1b/toytrain/image_2.jpg")
         epilines(toytrain_im1 , toytrain_im2 , F_toytrain)
 
     elif(args.type == '2'):
@@ -282,11 +285,11 @@ if __name__ == '__main__':
             raise RuntimeError("arguments ransac_object and ransac_algorithm needed for Q2. Please use python3 main.py -h for more info")
         
         object = args.ransac_object
-        raw_correspondences = np.load('../assignment3/data/q1b/'+object+'/'+object+'_corresp_raw.npz')
+        raw_correspondences = np.load('./data/q1b/'+object+'/'+object+'_corresp_raw.npz')
         pts1 = raw_correspondences['pts1']
         pts2 = raw_correspondences['pts2']
-        object1 = cv2.imread('../assignment3/data/q1b/'+object+'/image_1.jpg')
-        object2 = cv2.imread('../assignment3/data/q1b/'+object+'/image_2.jpg')
+        object1 = cv2.imread('./data/q1b/'+object+'/image_1.jpg')
+        object2 = cv2.imread('./data/q1b/'+object+'/image_2.jpg')
         print("Object: ", object)
         
         if(object == 'toybus'):
@@ -298,24 +301,24 @@ if __name__ == '__main__':
             if(args.ransac_algorithm == '8'):
                 ransac(pts1 , pts2 , object1 , object2 , 8 , 0.008 , 10000)
             else:
-                ransac(pts1 , pts2 , object1 , object2 , 7 , 200 , 10000)
+                ransac(pts1 , pts2 , object1 , object2 , 7 , 650 , 10000)
 
     elif(args.type == '3'):
-        cow1 = cv2.imread('../assignment3/data/q3/img1.jpg')
-        cow2 = cv2.imread('../assignment3/data/q3/img2.jpg')
-        cow_cam1 = np.load('../assignment3/data/q3/P1.npy')
-        cow_cam2 = np.load('../assignment3/data/q3/P2.npy')
-        cow_pts1 = np.load('../assignment3/data/q3/pts1.npy')
-        cow_pts2 = np.load('../assignment3/data/q3/pts2.npy')
+        cow1 = cv2.imread('./data/q3/img1.jpg')
+        cow2 = cv2.imread('./data/q3/img2.jpg')
+        cow_cam1 = np.load('./data/q3/P1.npy')
+        cow_cam2 = np.load('./data/q3/P2.npy')
+        cow_pts1 = np.load('./data/q3/pts1.npy')
+        cow_pts2 = np.load('./data/q3/pts2.npy')
         _ = triangulation(cow1 , cow2 , cow_cam1 ,cow_cam2 , cow_pts1 , cow_pts2)
 
     elif(args.type == '4'):
-        cow1 = cv2.imread('../assignment3/data/q4/img1.jpg')
-        cow2 = cv2.imread('../assignment3/data/q4/img2.jpg')
-        cow_cam1 = np.load('../assignment3/data/q4/P1_noisy.npy')
-        cow_cam2 = np.load('../assignment3/data/q4/P2_noisy.npy')
-        cow_pts1 = np.load('../assignment3/data/q4/pts1.npy')
-        cow_pts2 = np.load('../assignment3/data/q4/pts2.npy')
+        cow1 = cv2.imread('./data/q4/img1.jpg')
+        cow2 = cv2.imread('./data/q4/img2.jpg')
+        cow_cam1 = np.load('./data/q4/P1_noisy.npy')
+        cow_cam2 = np.load('./data/q4/P2_noisy.npy')
+        cow_pts1 = np.load('./data/q4/pts1.npy')
+        cow_pts2 = np.load('./data/q4/pts2.npy')
         
         proj_pts1 = project_pts(cow_pts1)
         proj_pts2 = project_pts(cow_pts2)
@@ -353,24 +356,33 @@ if __name__ == '__main__':
         _ = triangulation(cow1 , cow2 , P1_final ,P2_final , cow_pts1 , cow_pts2)
     
     elif(args.type == '5'):
-        img1 = cv2.imread('./new_data/car1.jpg')
-        img2 = cv2.imread('./new_data/car2.jpg')
-        gray_img1 = cv2.cvtColor(img1 , cv2.COLOR_BGR2GRAY)
-        gray_img2 = cv2.cvtColor(img2 , cv2.COLOR_BGR2GRAY)
+        if(args.q5_object == None):
+            raise RuntimeError('q5_object argument needed')
 
-        sift = cv2.ORB_create(nfeatures=500 , nlevels=8 , patchSize=20)
-        kp1 ,desc1 = sift.detectAndCompute(gray_img1 , None)
-        kp2 ,desc2 = sift.detectAndCompute(gray_img2 , None)
+        def extract_keyp_and_ransac(object):
+            img1 = cv2.imread('./new_data/'+object+'1.jpg')
+            img2 = cv2.imread('./new_data/'+object+'2.jpg')
+            gray_img1 = cv2.cvtColor(img1 , cv2.COLOR_BGR2GRAY)
+            gray_img2 = cv2.cvtColor(img2 , cv2.COLOR_BGR2GRAY)
 
-        bf = cv2.BFMatcher(cv2.NORM_HAMMING , crossCheck = True)
-        matches = bf.match(desc1 , desc2)
-        matches = sorted(matches , key= lambda x:x.distance)
-        matches = matches[:50]
+            sift = cv2.SIFT_create(nfeatures=500)
+            kp1 ,desc1 = sift.detectAndCompute(gray_img1 , None)
+            kp2 ,desc2 = sift.detectAndCompute(gray_img2 , None)
 
-        matched_img = cv2.drawMatches(gray_img1, kp1, gray_img2, kp2, matches[:50], None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-        show_img('matches' , matched_img)
-        pts1_list = np.array([kp1[mat.queryIdx].pt for mat in matches] , dtype=int)
-        pts2_list = np.array([kp2[mat.trainIdx].pt for mat in matches] , dtype=int)
-       
-        print("Ransac for image")
-        ransac(pts1_list , pts2_list , img1 , img2 , 8 , 0.0008 , 10000)
+            bf = cv2.BFMatcher()
+            matches = bf.knnMatch(desc1 , desc2 , k=2)
+            good = []
+            for m,n in matches:
+                if m.distance < 0.8*n.distance:
+                    good.append([m])
+        
+            matched_img = cv2.drawMatchesKnn(gray_img1, kp1, gray_img2, kp2, good, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+            show_img('matches' , matched_img)
+            cv2.imwrite('./submissions/car2_matches.jpg' , matched_img)
+            pts1_list = np.array([kp1[(mat[0]).queryIdx].pt for mat in good] , dtype=int)
+            pts2_list = np.array([kp2[(mat[0]).trainIdx].pt for mat in good] , dtype=int)
+        
+            print("Ransac for image")
+            ransac(pts1_list , pts2_list , img1 , img2 , 8 , 0.1 , 10000)
+        
+        extract_keyp_and_ransac(args.q5_object)

@@ -25,5 +25,5 @@ def annotate(img):
     cv2.imshow("Annotated Points" , pt_img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-    cv2.imwrite('./submissions/chair_pts_8p.jpg' , pt_img)
+    cv2.imwrite('./submissions/car2_pts.jpg' , pt_img)
     return points
