@@ -53,20 +53,13 @@ def epilines(object1, object2 , F_object):
         x1, y1 = map(int, [object2.shape[1], -(line[2] + line[0] * object2.shape[1]) / line[1] ])
         line_img = cv2.line(line_img , (x0 , y0) , (x1 , y1) , (255,0,0) , 2)
     show_img('epipolar line' , line_img)
+    cv2.imwrite('./submissions/chair_epilines_8p.jpg' , line_img)
 
-def F_ransac_roots():
-    pass
-
-
-def ransac(object , points , error_thresh , num_iters):
+def ransac(pts1 , pts2 , object1, object2 , points , error_thresh , num_iters):
     start_time = time.time()
-    print("Object: ", object)
     print('Algorithm: ', points, 'point') 
     print('Number of iterations: ',num_iters)
     print('Error Threshold: ',error_thresh)
-    raw_correspondences = np.load('../assignment3/data/q1b/'+object+'/'+object+'_corresp_raw.npz')
-    pts1 = raw_correspondences['pts1']
-    pts2 = raw_correspondences['pts2']
     corres_size = (pts1.copy()).shape[0]
     F_int = None
     F_eight = None
@@ -145,8 +138,6 @@ def ransac(object , points , error_thresh , num_iters):
     print("Time Taken: ",time.time() - start_time," sec\n")
     plt.plot(inlier_stack)
     plt.show()
-    object1 = cv2.imread('../assignment3/data/q1b/'+object+'/image_1.jpg')
-    object2 = cv2.imread('../assignment3/data/q1b/'+object+'/image_2.jpg')
 
     # Using the best inliers for fundamental matrix calculation
     new_pt1 = best_pts1
@@ -289,17 +280,25 @@ if __name__ == '__main__':
     elif(args.type == '2'):
         if ((args.ransac_object == None) or (args.ransac_algorithm == None)):
             raise RuntimeError("arguments ransac_object and ransac_algorithm needed for Q2. Please use python3 main.py -h for more info")
-
-        if(args.ransac_algorithm == '8'):
-            if(args.ransac_object == 'toybus'):
-                ransac('toybus' , 8 , 0.0065 , 10000)
+        
+        object = args.ransac_object
+        raw_correspondences = np.load('../assignment3/data/q1b/'+object+'/'+object+'_corresp_raw.npz')
+        pts1 = raw_correspondences['pts1']
+        pts2 = raw_correspondences['pts2']
+        object1 = cv2.imread('../assignment3/data/q1b/'+object+'/image_1.jpg')
+        object2 = cv2.imread('../assignment3/data/q1b/'+object+'/image_2.jpg')
+        print("Object: ", object)
+        
+        if(object == 'toybus'):
+            if(args.ransac_algorithm == '8'):
+                ransac(pts1 , pts2 , object1 , object2 , 8 , 0.0065 , 10000)
             else:
-                ransac('toytrain' , 8 , 0.008 , 10000)
+                ransac(pts1 , pts2 , object1 , object2 , 7 , 440 , 10000)            
         else:
-            if(args.ransac_object == 'toybus'):
-                ransac('toybus' , 7 , 440 , 10000)
+            if(args.ransac_algorithm == '8'):
+                ransac(pts1 , pts2 , object1 , object2 , 8 , 0.008 , 10000)
             else:
-                ransac('toytrain' , 7 , 200 , 10000)
+                ransac(pts1 , pts2 , object1 , object2 , 7 , 200 , 10000)
 
     elif(args.type == '3'):
         cow1 = cv2.imread('../assignment3/data/q3/img1.jpg')
@@ -341,7 +340,7 @@ if __name__ == '__main__':
         params_init[24:] = pts3d_init.flatten()
         start_time = time.time()
         res = least_squares(residual_func , params_init , verbose=2, method='dogbox')
-        print("TIme taken for optimization: ", time.time() - start_time,' sec')
+        print("Time taken for optimization: ", time.time() - start_time,' sec')
 
         final_params = res.x
         P1_final = final_params[:12].reshape(3,4)
@@ -352,3 +351,26 @@ if __name__ == '__main__':
         print("P2_final:\n", P2_final)
         # print(X3d_final.shape)
         _ = triangulation(cow1 , cow2 , P1_final ,P2_final , cow_pts1 , cow_pts2)
+    
+    elif(args.type == '5'):
+        img1 = cv2.imread('./new_data/car1.jpg')
+        img2 = cv2.imread('./new_data/car2.jpg')
+        gray_img1 = cv2.cvtColor(img1 , cv2.COLOR_BGR2GRAY)
+        gray_img2 = cv2.cvtColor(img2 , cv2.COLOR_BGR2GRAY)
+
+        sift = cv2.ORB_create(nfeatures=500 , nlevels=8 , patchSize=20)
+        kp1 ,desc1 = sift.detectAndCompute(gray_img1 , None)
+        kp2 ,desc2 = sift.detectAndCompute(gray_img2 , None)
+
+        bf = cv2.BFMatcher(cv2.NORM_HAMMING , crossCheck = True)
+        matches = bf.match(desc1 , desc2)
+        matches = sorted(matches , key= lambda x:x.distance)
+        matches = matches[:50]
+
+        matched_img = cv2.drawMatches(gray_img1, kp1, gray_img2, kp2, matches[:50], None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+        show_img('matches' , matched_img)
+        pts1_list = np.array([kp1[mat.queryIdx].pt for mat in matches] , dtype=int)
+        pts2_list = np.array([kp2[mat.trainIdx].pt for mat in matches] , dtype=int)
+       
+        print("Ransac for image")
+        ransac(pts1_list , pts2_list , img1 , img2 , 8 , 0.0008 , 10000)
