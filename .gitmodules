@@ -19,3 +19,6 @@
 [submodule "assignments/3/assignment3"]
 	path = assignments/3/assignment3
 	url = https://github.com/geometric3d/assignment3.git
+[submodule "assignments/4/assignment4"]
+	path = assignments/4/assignment4
+	url = https://github.com/geometric3d/assignment4.git
