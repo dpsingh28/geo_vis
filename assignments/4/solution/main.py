@@ -163,8 +163,6 @@ def generate_q1P2(K1 , K2 , corres_pt1 , corres_pt2):
                         P2_final = P2s[idx_final]
                         run = False
                         break
-    print("Final R and t are:\n" , np.linalg.inv(K2)@P2_final)
-    print(Emat)
     np.save('./new_data/q1P2_final.npy' , P2_final)
 
 def triangulate(p1 , p2 , cam1 , cam2):
@@ -183,16 +181,13 @@ def triangulate(p1 , p2 , cam1 , cam2):
     X_vec = np.reshape(vt[-1,:] , (1,-1))
     return X_vec
 
-def triangulation(im1 , im2 , cam1 ,cam2 , pts1 , pts2):
+def triangulation_q1(cam1 ,cam2 , pts1 , pts2):
     proj_pts1 = project_pts(pts1)
     proj_pts2 = project_pts(pts2)
     img_3d_pts = np.reshape(np.array([]) , (0,4))
     
-    start_time = time.time()
     for p1,p2 in zip(proj_pts1 , proj_pts2):
         img_3d_pts = np.vstack((img_3d_pts , triangulate(p1 , p2 , cam1 , cam2)))
-
-    print("Time taken by loop= ",time.time() - start_time," sec")
     img_3d_pts = img_3d_pts / np.reshape(img_3d_pts[:,-1] , (-1,1))
     img_3d_pts = img_3d_pts[:,0:3]
 
@@ -201,6 +196,48 @@ def triangulation(im1 , im2 , cam1 ,cam2 , pts1 , pts2):
     ax.scatter3D(img_3d_pts[:,0] , img_3d_pts[:,1] , img_3d_pts[:,2] , s=10)
     plt.show()
 
+def triangulation_q2(cam1 ,cam2 , pts1 , pts2):
+    proj_pts1 = project_pts(pts1)
+    proj_pts2 = project_pts(pts2)
+    img_3d_pts = np.reshape(np.array([]) , (0,4))
+    
+    for p1,p2 in zip(proj_pts1 , proj_pts2):
+        img_3d_pts = np.vstack((img_3d_pts , triangulate(p1 , p2 , cam1 , cam2)))
+    img_3d_pts = img_3d_pts / np.reshape(img_3d_pts[:,-1] , (-1,1))
+    img_3d_pts = img_3d_pts[:,0:3]
+    return img_3d_pts
+
+def plot3d(pts3d):
+    fig = plt.figure()
+    ax=fig.add_subplot(projection='3d')
+    color_map = plt.get_cmap('gist_rainbow')
+    ax.set_xlim(-0.8 , 0.8)
+    ax.set_ylim(-0.8 , 0.8)
+    ax.set_zlim(-0.8 , 0.8)
+    ax.grid(False)
+    ax.axis('off')
+    ax.scatter3D(pts3d[:,0] , pts3d[:,2] , -pts3d[:,1] , s=1 , c=-pts3d[:,2] ,  cmap = color_map)
+    plt.show()
+
+    # for angle in range(0, 360):
+    #     ax.view_init(0, angle)
+    #     plt.draw()
+    #     plt.pause(.001)
+
+def build_desc(arr):
+    arr_a = arr[:,0]
+    arr_b = arr[:,1]
+    desc = 0.5*((arr_a + arr_b)*(arr_a+arr_b+1)) + arr_b #using cantor pairing function for unique encoding
+    return desc
+
+def get_intersection(corres_set1, corres_set2):
+    desc1 = build_desc(corres_set1)
+    desc2 = build_desc(corres_set2)
+    elem, idx1,idx2 = np.intersect1d(desc1,desc2 , return_indices=True)
+
+    return elem,idx1,idx2
+
+    
 
 
 ############################################################################### Main Function ###############################################################################
@@ -211,8 +248,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if(args.type == '1'):
-        monument_img1 = cv2.imread('./data/monument/im1.jpg')
-        monument_img2 = cv2.imread('./data/monument/im2.jpg')
         K_monument = np.load('./data/monument/intrinsics.npy' , allow_pickle=True)
         K1_monument = K_monument.item()['K1']
         K2_monument = K_monument.item()['K2']
@@ -230,5 +265,60 @@ if __name__ == '__main__':
         P2 = P2/P2[-1,-1]
         print("Camera 1: \n", P1)
         print("Camera 2: \n", P2)
-        triangulation(monument_img1 , monument_img2 , P1 , P2 , corres_pt1 , corres_pt2)
-        
+        print("R and t for camera 2:\n", np.linalg.inv(K2_monument)@P2)
+        triangulation_q1( P1 , P2 , corres_pt1 , corres_pt2)
+    
+    elif(args.type == '2'):
+        cam1 = np.load('./data/data_cow/cameras/cam1.npz')
+        cam2 = np.load('./data/data_cow/cameras/cam2.npz')
+        correspondences_12_1 = np.load('./data/data_cow/correspondences/pairs_1_2/cam1_corresp.npy')
+        correspondences_12_2 = np.load('./data/data_cow/correspondences/pairs_1_2/cam2_corresp.npy')
+
+        K1 = cam1['K']
+        R1 = cam1['R']
+        t1 = cam1['T']
+        K2 = cam2['K']
+        R2 = cam2['R']
+        t2 = cam2['T']
+        P1 = K1@ np.hstack((R1 , np.reshape(t1 , (-1,1))))
+        P2 = K2@ np.hstack((R2 , np.reshape(t2 , (-1,1))))
+        pts12_3d = triangulation_q2(P1, P2, correspondences_12_1, correspondences_12_2)
+        # print(correspondences_12_1)
+        plot3d(pts12_3d)
+
+        correspondences_13_1 = np.load('./data/data_cow/correspondences/pairs_1_3/cam1_corresp.npy')
+        correspondences_13_3 = np.load('./data/data_cow/correspondences/pairs_1_3/cam2_corresp.npy')
+        correspondences_23_2 = np.load('./data/data_cow/correspondences/pairs_2_3/cam1_corresp.npy')
+        correspondences_23_3 = np.load('./data/data_cow/correspondences/pairs_2_3/cam2_corresp.npy')
+
+        elem, idx1,idx2 = get_intersection(correspondences_12_1 , correspondences_13_1)
+        known2d_pts_13_3 = np.array(correspondences_13_3[idx2] , dtype=float)
+        known3d_pts_13 = np.array(pts12_3d[idx1] , dtype=float)
+        success, R3,t3 = cv2.solvePnP(known3d_pts_13 , known2d_pts_13_3 , K1 , np.zeros((4,1)) , flags=0)
+        R3,_ = cv2.Rodrigues(R3)
+        P3 = K1 @ np.hstack((R3,t3))
+
+        pts13_3d = triangulation_q2(P1 , P3 , correspondences_13_1, correspondences_13_3)
+        pts23_3d = triangulation_q2(P2,P3,correspondences_23_2 , correspondences_23_3)
+        pts3d_after3 = np.vstack((pts12_3d , pts13_3d , pts23_3d))
+        plot3d(pts3d_after3)
+
+        correspondences_14_1 = np.load('./data/data_cow/correspondences/pairs_1_4/cam1_corresp.npy')
+        correspondences_14_4 = np.load('./data/data_cow/correspondences/pairs_1_4/cam2_corresp.npy')
+        correspondences_24_2 = np.load('./data/data_cow/correspondences/pairs_2_4/cam1_corresp.npy')
+        correspondences_24_4 = np.load('./data/data_cow/correspondences/pairs_2_4/cam2_corresp.npy')
+        correspondences_34_3 = np.load('./data/data_cow/correspondences/pairs_3_4/cam1_corresp.npy')
+        correspondences_34_4 = np.load('./data/data_cow/correspondences/pairs_3_4/cam2_corresp.npy')
+
+        elem,idx1,idx2 = get_intersection(correspondences_12_1 , correspondences_14_1)
+        known2d_pts_14_4 = np.array(correspondences_14_4[idx2] , dtype=float)
+        known3d_pts_14 = np.array(pts12_3d[idx1] , dtype = float)
+        success, R4,t4 = cv2.solvePnP(known3d_pts_14 , known2d_pts_14_4 , K1 , np.zeros((4,1)) , flags=0)
+        R4,_ = cv2.Rodrigues(R4)
+        P4 = K1 @ np.hstack((R4,t4))
+
+        pts14_3d = triangulation_q2(P1 , P4 , correspondences_14_1 , correspondences_14_4)
+        pts24_3d = triangulation_q2(P2 , P4 , correspondences_24_2 , correspondences_24_4)
+        pts34_3d = triangulation_q2(P3 , P4 , correspondences_34_3 , correspondences_34_4)
+        pts3d_final = np.vstack((pts3d_after3 , pts14_3d , pts24_3d , pts34_3d))
+        plot3d(pts3d_final)
