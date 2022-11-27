@@ -46,7 +46,7 @@ def eight_pt(pts1 , pts2):
 def ransac(pts1 , pts2 , points , error_thresh , num_iters):
     start_time = time.time()
     print('Algorithm: ', points, 'point') 
-    print('Number of iterations: ',num_iters)
+    print('Number of RANSAC iterations: ',num_iters)
     print('Error Threshold: ',error_thresh)
     corres_size = (pts1.copy()).shape[0]
     F_int = None
@@ -100,12 +100,6 @@ def ransac(pts1 , pts2 , points , error_thresh , num_iters):
     
     print("Ratio of inliers: ",history_inliers/pts1.shape[0])
     print("Time Taken: ",time.time() - start_time," sec\n")
-    plt.plot(inlier_stack)
-    plt.xlabel("Number of Iterations")
-    plt.ylabel("Ratio of Inliers")
-    plt.show()
-
-    # Using the best inliers for fundamental matrix calculation
     new_pt1 = best_pts1
     new_pt2 = best_pts2
     T1 = normalize_pts(new_pt1)
@@ -116,6 +110,96 @@ def ransac(pts1 , pts2 , points , error_thresh , num_iters):
     F_new = F_new / F_new[-1,-1]
     return F_new
 
+def generate_q1P2(K1 , K2 , corres_pt1 , corres_pt2):
+    assert corres_pt1.shape == corres_pt2.shape, "Shapes of the correspondences must be same"
+    run = True
+    i = 0
+    P2_final = None
+    while(run):
+        i+=1
+        print("Iteration ",i," for getting best E")
+        Fmat = ransac(corres_pt1 , corres_pt2 , 8 , 0.005 , 10000)
+        # print("Fundamental matrix is:\n", Fmat)
+        Emat = K2.T @ Fmat @ K1
+        # print("Essential matrix is:\n" , Emat)
+        u,s,v = np.linalg.svd(Emat)
+        s[-1] = 0
+        s[0] = (s[0] + s[1])/2
+        s[1] = s[0]
+        E_mat = u@np.diag(s)@v
+        u,_,v = np.linalg.svd(E_mat)
+        u3 = np.reshape(u[:,-1] , (-1,1))
+        wmat = np.array([[0,-1,0] , [1,0,0] , [0,0,1]])
+        P2s = {}
+        X2s = {}
+        zs = {} 
+        try:
+            P2s[1] = K2 @ np.hstack((u@wmat@v , u3))
+            P2s[2] = K2 @ np.hstack((u@wmat@v , -u3))
+            P2s[3] = K2 @ np.hstack((u@wmat.T@v , u3))
+            P2s[4] = K2 @ np.hstack((u@wmat.T@v , -u3))
+            
+            proj_pts2 = project_pts(corres_pt2)
+            X2s[1] = (np.linalg.inv(P2s[1].T@P2s[1]))@(P2s[1].T @proj_pts2.T)
+            X2s[2] = (np.linalg.inv(P2s[2].T@P2s[2]))@(P2s[2].T @proj_pts2.T)
+            X2s[3] = (np.linalg.inv(P2s[3].T@P2s[3]))@(P2s[3].T @proj_pts2.T)
+            X2s[4] = (np.linalg.inv(P2s[4].T@P2s[4]))@(P2s[4].T @proj_pts2.T)
+        
+            zs[1] = np.bincount(X2s[1][-1,:]>0)
+            zs[2] = np.bincount(X2s[2][-1,:]>0)
+            zs[3] = np.bincount(X2s[3][-1,:]>0)
+            zs[4] = np.bincount(X2s[4][-1,:]>0)
+        except:
+            print("Got singular matrices, going on to next iteration")
+            continue
+        idx_final = None
+
+        if len(zs) !=0:
+            for key,value in zs.items():
+                if len(value) == 2:
+                    if value[-1] == corres_pt1.shape[0]:
+                        print("\n\nFound out best E\n\n")
+                        idx_final = key
+                        P2_final = P2s[idx_final]
+                        run = False
+                        break
+    print("Final R and t are:\n" , np.linalg.inv(K2)@P2_final)
+    print(Emat)
+    np.save('./new_data/q1P2_final.npy' , P2_final)
+
+def triangulate(p1 , p2 , cam1 , cam2):
+    px1 = np.array([[0 , -p1[2] , p1[1]],
+                    [p1[2] , 0 , -p1[0]],
+                    [-p1[1] , p1[0] , 0]])
+    px2 = np.array([[0 , -p2[2] , p2[1]],
+                    [p2[2] , 0 , -p2[0]],
+                    [-p2[1] , p2[0] , 0]])
+    A1 = px1@cam1
+    A2 = px2@cam2
+    A_mat = np.zeros((4,4))
+    A_mat[0:2,:] = A1[0:2,:]
+    A_mat[2:4,:] = A2[0:2,:]
+    _,_,vt = np.linalg.svd(A_mat)
+    X_vec = np.reshape(vt[-1,:] , (1,-1))
+    return X_vec
+
+def triangulation(im1 , im2 , cam1 ,cam2 , pts1 , pts2):
+    proj_pts1 = project_pts(pts1)
+    proj_pts2 = project_pts(pts2)
+    img_3d_pts = np.reshape(np.array([]) , (0,4))
+    
+    start_time = time.time()
+    for p1,p2 in zip(proj_pts1 , proj_pts2):
+        img_3d_pts = np.vstack((img_3d_pts , triangulate(p1 , p2 , cam1 , cam2)))
+
+    print("Time taken by loop= ",time.time() - start_time," sec")
+    img_3d_pts = img_3d_pts / np.reshape(img_3d_pts[:,-1] , (-1,1))
+    img_3d_pts = img_3d_pts[:,0:3]
+
+    fig = plt.figure()
+    ax=fig.add_subplot(projection='3d')
+    ax.scatter3D(img_3d_pts[:,0] , img_3d_pts[:,1] , img_3d_pts[:,2] , s=10)
+    plt.show()
 
 
 
@@ -135,37 +219,16 @@ if __name__ == '__main__':
         correspondences = np.load('./data/monument/some_corresp_noisy.npz')
         corres_pt1 = correspondences['pts1']
         corres_pt2 = correspondences['pts2']
-        Fmat = ransac(corres_pt1 , corres_pt2 , 8 , 0.0001 , 10000)
-        print("Fundamental matrix is:\n", Fmat)
-        Emat = K2_monument.T @ Fmat @ K1_monument
-        print("Essential matrix is:\n" , Emat)
-        u,_,v = np.linalg.svd(Emat)
-        u3 = np.reshape(u[:,-1] , (-1,1))
-        wmat = np.array([[0,-1,0] , [1,0,0] , [0,0,1]])
-        P2final = None
-        P2s = {}
-        P2s[1] = K2_monument @ np.hstack((u@wmat@v.T , u3))
-        P2s[2] = K2_monument @ np.hstack((u@wmat@v.T , -u3))
-        P2s[3] = K2_monument @ np.hstack((u@wmat.T@v.T , u3))
-        P2s[4] = K2_monument @ np.hstack((u@wmat.T@v.T , -u3))
+        P1 = np.hstack((K1_monument , np.array([[0],[0],[0]])))
+        P2 = None
+        try:
+            P2 = np.load('./new_data/q1P2_final.npy')
+        except:
+            print("P2 not found, generating P2 for q1")
+            generate_q1P2(K1_monument , K2_monument , corres_pt1 , corres_pt2)
+            P2 = np.load('./new_data/q1P2_final.npy')
+        P2 = P2/P2[-1,-1]
+        print("Camera 1: \n", P1)
+        print("Camera 2: \n", P2)
+        triangulation(monument_img1 , monument_img2 , P1 , P2 , corres_pt1 , corres_pt2)
         
-        proj_pts2 = project_pts(corres_pt2)
-        X2s = {}
-        X2s[1] = (np.linalg.inv(P2s[1].T@P2s[1]))@(P2s[1].T @proj_pts2.T)
-        X2s[2] = (np.linalg.inv(P2s[2].T@P2s[2]))@(P2s[2].T @proj_pts2.T)
-        X2s[3] = (np.linalg.inv(P2s[3].T@P2s[3]))@(P2s[3].T @proj_pts2.T)
-        X2s[4] = (np.linalg.inv(P2s[4].T@P2s[4]))@(P2s[4].T @proj_pts2.T)
-
-        zs = {}
-        zs[1] = np.bincount(X2s[1][-1,:]>0)
-        zs[2] = np.bincount(X2s[2][-1,:]>0)
-        zs[3] = np.bincount(X2s[3][-1,:]>0)
-        zs[4] = np.bincount(X2s[4][-1,:]>0)
-
-        comp_array = []
-        comp_array.append(zs[1][-1])
-        comp_array.append(zs[2][-1])
-        comp_array.append(zs[3][-1])
-        comp_array.append(zs[4][-1])
-        comp_array = np.array(comp_array)
-        print(comp_array , zs)
