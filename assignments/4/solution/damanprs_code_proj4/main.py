@@ -258,7 +258,7 @@ if __name__ == '__main__':
             print("P2 not found, generating P2 for q1")
             generate_q1P2(K1_monument , K2_monument , corres_pt1 , corres_pt2)
             P2 = np.load('./new_data/q1P2_final.npy')
-        # P2 = P2/P2[-1,-1]
+        P2 = P2/P2[-1,-1]
         print("Camera 1: \n", P1)
         print("Camera 2: \n", P2)
         print("R and t for camera 2:\n", np.linalg.inv(K2_monument)@P2)
